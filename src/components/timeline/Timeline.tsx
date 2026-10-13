@@ -21,8 +21,11 @@ export function Timeline({
   selectedId,
   onOpen,
   actions,
+  readOnly = false,
 }: {
   log: DayLog;
+  /** History (HIST-2): read-only poster of a logged day. */
+  readOnly?: boolean;
   nextId: string | undefined;
   selectedId: string | null;
   onOpen: (mealId: string) => void;
@@ -52,6 +55,7 @@ export function Timeline({
           selected={meal.id === selectedId}
           onOpen={() => onOpen(meal.id)}
           actions={actions}
+          readOnly={readOnly}
         />
       ))}
     </ol>
@@ -66,7 +70,9 @@ function MealRow({
   selected,
   onOpen,
   actions,
+  readOnly,
 }: {
+  readOnly: boolean;
   index: number;
   meal: Meal;
   log: DayLog;
@@ -113,9 +119,9 @@ function MealRow({
         <time className="relative z-10 mt-1 rounded bg-cream px-0.5 text-[10.5px] font-semibold text-forest tabular">{meal.time}</time>
       </div>
       {meal.isFreeSlot ? (
-        <FreeSlotCard meal={meal} log={log} isNext={isNext} selected={selected} settle={celebrations} onOpen={onOpen} />
+        <FreeSlotCard meal={meal} log={log} isNext={isNext} selected={selected} settle={celebrations} onOpen={onOpen} readOnly={readOnly} />
       ) : (
-        <MealCard meal={meal} log={log} isNext={isNext} selected={selected} settle={celebrations} onOpen={onOpen} actions={actions} />
+        <MealCard meal={meal} log={log} isNext={isNext} selected={selected} settle={celebrations} onOpen={onOpen} actions={actions} readOnly={readOnly} />
       )}
     </motion.li>
   );

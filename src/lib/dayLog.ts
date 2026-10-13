@@ -8,7 +8,7 @@
 // - A free slot's status is "eaten" once it has at least one entry, otherwise "none".
 
 import { minutesOfDay, timeToMinutes } from './dates';
-import { deriveMealStatus, itemEatenValue, mealPlanned, nutritionOf, sum } from './nutrition';
+import { deriveMealStatus, itemEatenValue, mealPlanned, nutritionOf, sum, ZERO } from './nutrition';
 import type { DayLog, Item, Meal, MealLog, Nutrition, Plan, Targets } from './types';
 
 type Status = MealLog['status'];
@@ -141,9 +141,13 @@ function minTarget(eaten: number, remaining: number, min: number): MinTarget {
   return { eaten, min, projected, status };
 }
 
-export function targetStatus(log: DayLog): TargetStatus {
+/**
+ * §4.4 target status. Today uses the projected rule (eaten + remaining planned). For a finished day
+ * (`final`, History) nothing more is coming, so minimums are judged on what was actually eaten.
+ */
+export function targetStatus(log: DayLog, { final = false }: { final?: boolean } = {}): TargetStatus {
   const { eaten } = dayTotals(log);
-  const rest = remainingPlanned(log);
+  const rest = final ? { ...ZERO } : remainingPlanned(log);
   const t = log.targetsSnapshot;
   return {
     kcal: { eaten: eaten.kcal, target: t.kcal, over: eaten.kcal > t.kcal },
@@ -151,6 +155,18 @@ export function targetStatus(log: DayLog): TargetStatus {
     fat: minTarget(eaten.fat, rest.fat, t.fatMin),
     fibre: minTarget(eaten.fibre, rest.fibre, t.fibreMin),
   };
+}
+
+export type DayStatus = 'empty' | 'good' | 'warning';
+
+/**
+ * HIST-1 / §4.4 for past days: colour of a day's dot. `empty` = nothing eaten was logged;
+ * `warning` (terracotta) = kcal over target or any minimum missed; otherwise `good` (forest).
+ */
+export function finalDayStatus(log: DayLog): DayStatus {
+  const s = targetStatus(log, { final: true });
+  if (s.kcal.eaten === 0) return 'empty';
+  return s.kcal.over || [s.protein, s.fat, s.fibre].some((t) => t.status !== 'met') ? 'warning' : 'good';
 }
 
 // ---------------------------------------------------------------------------

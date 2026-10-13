@@ -1,6 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { format } from 'date-fns';
+import { Download, FileUp, Loader2, RotateCcw, Share } from 'lucide-react';
 import { getPersistenceStatus, type PersistenceStatus } from '../lib/storage';
-import { ComingSoon, ScreenShell } from './PlaceholderScreen';
+import { lastBackupLabel, parseBackup, type BackupFile, type BackupSummary } from '../lib/backup';
+import { localDateKey } from '../lib/dates';
+import type { FooterIcon, Settings, Targets } from '../lib/types';
+import { importAll } from '../db/backup';
+import { ensureDayLog } from '../db/dayLogs';
+import { SCHEMA_VERSION } from '../db/seed';
+import { resetToday, updateSettings, updateTargets } from '../db/settings';
+import { prepareExport, resetExport, saveExport, useExportState } from '../hooks/backupFlow';
+import { NumberInput } from '../components/inputs/NumberInput';
+import { TextInput } from '../components/inputs/TextInput';
+import { ConfirmDialog } from '../components/dialog/ConfirmDialog';
+import { FooterGlyph } from '../components/icons/icons';
+import { showToast } from '../components/toast/toastStore';
 
 const STATUS_LABEL: Record<PersistenceStatus, string> = {
   persistent: 'persistent',
@@ -8,9 +22,43 @@ const STATUS_LABEL: Record<PersistenceStatus, string> = {
   unsupported: 'may be evicted (persistence not supported)',
 };
 
-/** Phase 1: storage persistence status (IOS-10) + app version. Full settings arrive in Phase 5. */
-export function SettingsScreen() {
+const TARGET_FIELDS: { key: keyof Targets; label: string; unit: string }[] = [
+  { key: 'kcal', label: 'Calories', unit: 'kcal / day' },
+  { key: 'proteinMin', label: 'Protein', unit: 'g minimum' },
+  { key: 'fatMin', label: 'Fat', unit: 'g minimum' },
+  { key: 'fibreMin', label: 'Fibre', unit: 'g minimum' },
+];
+
+const FOOTER_ICON_CHOICES: FooterIcon[] = ['droplet', 'leaf', 'coffee', 'clock', 'sun', 'moon', 'apple', 'star', 'sparkle'];
+
+function Card({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="mt-6">
+      <h2 className="mb-2 font-serif text-[19px] font-semibold text-forest">{title}</h2>
+      <div className="rounded-[22px] bg-porcelain px-4 py-1 shadow-card">{children}</div>
+    </section>
+  );
+}
+
+function Row({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
+  return (
+    <div className="border-b border-gold/30 py-3 last:border-b-0">
+      <div className="flex items-center justify-between gap-4 text-[14.5px]">
+        <span className="text-espresso">{label}</span>
+        <span className="min-w-0 text-right">{children}</span>
+      </div>
+      {hint && <p className="mt-1 text-[12px] leading-snug text-warm-grey">{hint}</p>}
+    </div>
+  );
+}
+
+/** Settings (SET-1 … SET-7, LOG-8). */
+export function SettingsScreen({ settings, today }: { settings: Settings; today: string }) {
   const [status, setStatus] = useState<PersistenceStatus | null>(null);
+  const [pendingImport, setPendingImport] = useState<{ backup: BackupFile; summary: BackupSummary } | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const exportState = useExportState();
+  const importInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -20,23 +68,208 @@ export function SettingsScreen() {
     };
   }, []);
 
+  // ---- export (SET-3) ----------------------------------------------------
+  async function onSave() {
+    try {
+      const r = await saveExport();
+      if (r === 'shared') showToast({ message: 'Backup saved' });
+      if (r === 'downloaded') showToast({ message: 'Backup downloaded' });
+    } catch {
+      showToast({ message: "Couldn't share the backup. Try again." });
+    }
+  }
+
+  // ---- import (SET-4) ----------------------------------------------------
+  async function onImportFile(file: File | undefined) {
+    if (importInput.current) importInput.current.value = '';
+    if (!file) return;
+    const result = parseBackup(await file.text(), SCHEMA_VERSION);
+    if (!result.ok) {
+      showToast({ message: result.error, durationMs: 7000 });
+      return;
+    }
+    setPendingImport({ backup: result.backup, summary: result.summary });
+  }
+
+  async function confirmImport() {
+    if (!pendingImport) return;
+    const { backup } = pendingImport;
+    setPendingImport(null);
+    try {
+      await importAll(backup);
+      // The backup may not contain today: make sure today has a log again.
+      await ensureDayLog(localDateKey());
+      showToast({ message: 'Backup restored' });
+    } catch {
+      showToast({ message: 'Import failed — nothing was changed.', durationMs: 7000 });
+    }
+  }
+
+  const importMessage = pendingImport ? describeImport(pendingImport.summary) : '';
+
   return (
-    <ScreenShell title="Settings">
-      <dl className="divide-y divide-gold/30 rounded-[22px] bg-porcelain px-4 shadow-card">
-        <div className="flex justify-between gap-4 py-3.5 text-[14px]">
-          <dt className="text-espresso">Storage</dt>
-          <dd className={status === 'persistent' ? 'text-forest' : 'text-terracotta'}>
-            {status ? STATUS_LABEL[status] : '…'}
-          </dd>
+    <div className="mx-auto max-w-[480px] px-4 pt-6">
+      <h1 className="font-serif text-[28px] font-bold text-forest">Settings</h1>
+
+      {/* SET-1 */}
+      <Card title="Daily targets">
+        {TARGET_FIELDS.map(({ key, label, unit }) => (
+          <Row key={key} label={label}>
+            <span className="flex items-center justify-end gap-2">
+              <NumberInput
+                aria-label={label}
+                value={settings.targets[key]}
+                onCommit={(v) => v !== undefined && void updateTargets((t) => ({ ...t, [key]: v }))}
+                className="w-[84px] text-right"
+              />
+              <span className="w-[70px] text-left text-[12px] text-warm-grey">{unit}</span>
+            </span>
+          </Row>
+        ))}
+        <p className="pb-3 text-[12px] leading-snug text-warm-grey">Changes apply from today; past days keep the targets they had.</p>
+      </Card>
+
+      {/* SET-2 */}
+      <Card title="Poster footer">
+        {settings.footerItems.map((item, i) => (
+          <div key={i} className="border-b border-gold/30 py-3 last:border-b-0">
+            <TextInput
+              aria-label={`Footer item ${i + 1} text`}
+              value={item.text}
+              onCommit={(text) =>
+                void updateSettings((s) => ({ ...s, footerItems: s.footerItems.map((f, j) => (j === i ? { ...f, text } : f)) }))
+              }
+            />
+            <div role="radiogroup" aria-label={`Footer item ${i + 1} icon`} className="mt-2 flex flex-wrap gap-1.5">
+              {FOOTER_ICON_CHOICES.map((icon) => {
+                const selected = icon === item.icon;
+                return (
+                  <button
+                    key={icon}
+                    role="radio"
+                    aria-checked={selected}
+                    aria-label={icon}
+                    onClick={() =>
+                      void updateSettings((s) => ({ ...s, footerItems: s.footerItems.map((f, j) => (j === i ? { ...f, icon } : f)) }))
+                    }
+                    className={`flex h-9 w-9 items-center justify-center rounded-full ${
+                      selected ? 'bg-forest text-cream ring-2 ring-gold ring-offset-1 ring-offset-porcelain' : 'bg-sage text-forest'
+                    }`}
+                  >
+                    <FooterGlyph icon={icon} size={17} strokeWidth={1.7} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      {/* SET-3 / SET-4 / SET-5 */}
+      <Card title="Backup">
+        <Row label="Last backup">
+          <span className={settings.lastBackupAt ? 'text-forest' : 'text-terracotta'}>{lastBackupLabel(settings.lastBackupAt)}</span>
+        </Row>
+        <div className="space-y-2.5 py-3">
+          {exportState.kind === 'ready' ? (
+            <>
+              <button
+                onClick={() => void onSave()}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-forest py-2.5 text-[14.5px] font-semibold text-cream"
+              >
+                <Share size={17} aria-hidden /> Save backup file
+              </button>
+              <p className="text-center text-[12px] text-warm-grey">
+                {exportState.file.name} · {exportState.sizeKb} KB ·{' '}
+                <button onClick={resetExport} className="font-semibold text-olive underline">
+                  cancel
+                </button>
+              </p>
+            </>
+          ) : (
+            <button
+              onClick={() => void prepareExport()}
+              disabled={exportState.kind === 'preparing'}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-forest py-2.5 text-[14.5px] font-semibold text-cream disabled:opacity-60"
+            >
+              {exportState.kind === 'preparing' ? <Loader2 size={17} className="animate-spin" aria-hidden /> : <Download size={17} aria-hidden />}
+              {exportState.kind === 'preparing' ? 'Preparing…' : 'Export backup'}
+            </button>
+          )}
+          {exportState.kind === 'error' && <p className="text-center text-[12.5px] text-terracotta">{exportState.message}</p>}
+          <button
+            onClick={() => importInput.current?.click()}
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-forest/50 py-2.5 text-[14.5px] font-semibold text-forest"
+          >
+            <FileUp size={17} aria-hidden /> Import backup
+          </button>
+          <input
+            ref={importInput}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={(e) => void onImportFile(e.target.files?.[0])}
+          />
+          <p className="text-[12px] leading-snug text-warm-grey">
+            The file holds everything: settings, plan, every day and all photos. On iPhone choose “Save to Files” and keep it in iCloud
+            Drive — iOS can clear app data that isn't used for a while.
+          </p>
         </div>
-        <div className="flex justify-between gap-4 py-3.5 text-[14px]">
-          <dt className="text-espresso">Version</dt>
-          <dd className="text-warm-grey tabular">{__APP_VERSION__}</dd>
+      </Card>
+
+      {/* SET-6 / LOG-8 */}
+      <Card title="Today">
+        <div className="py-3">
+          <button
+            onClick={() => setConfirmReset(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-terracotta/50 py-2.5 text-[14.5px] font-semibold text-terracotta"
+          >
+            <RotateCcw size={16} aria-hidden /> Reset today's log
+          </button>
+          <p className="mt-2 text-[12px] leading-snug text-warm-grey">
+            Starts today again from the current plan: clears what you marked eaten, extras and snack entries.
+          </p>
         </div>
-      </dl>
-      <div className="mt-4">
-        <ComingSoon phase={5} what="targets, footer items, backup & import" />
-      </div>
-    </ScreenShell>
+      </Card>
+
+      {/* SET-7 */}
+      <Card title="About">
+        <Row label="Storage">
+          <span className={status === 'persistent' ? 'text-forest' : 'text-terracotta'}>{status ? STATUS_LABEL[status] : '…'}</span>
+        </Row>
+        <Row label="Version">
+          <span className="text-warm-grey tabular">{__APP_VERSION__}</span>
+        </Row>
+      </Card>
+
+      <ConfirmDialog
+        open={!!pendingImport}
+        title="Replace all data?"
+        message={importMessage}
+        confirmLabel="Replace"
+        cancelLabel="Cancel"
+        onConfirm={() => void confirmImport()}
+        onCancel={() => setPendingImport(null)}
+      />
+      <ConfirmDialog
+        open={confirmReset}
+        title="Reset today's log?"
+        message={`Everything logged for ${format(new Date(`${today}T12:00:00`), 'EEEE d MMMM')} will be cleared and today restarts from the current plan.`}
+        confirmLabel="Reset"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setConfirmReset(false);
+          void resetToday().then(() => showToast({ message: "Today's log was reset" }));
+        }}
+        onCancel={() => setConfirmReset(false)}
+      />
+    </div>
   );
+}
+
+/** SET-4 summary: days, photos, date range. */
+function describeImport(s: BackupSummary): string {
+  const d = (key: string) => format(new Date(`${key}T12:00:00`), 'd MMM yyyy');
+  const range = s.from && s.to ? (s.from === s.to ? ` (${d(s.from)})` : ` (${d(s.from)} – ${d(s.to)})`) : '';
+  return `This backup from ${format(new Date(s.exportedAt), 'd MMM yyyy, HH:mm')} has ${s.days} day${s.days === 1 ? '' : 's'}${range} and ${s.photos} photo${s.photos === 1 ? '' : 's'}. Everything currently in the app will be replaced.`;
 }

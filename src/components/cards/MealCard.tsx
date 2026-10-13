@@ -34,10 +34,13 @@ export function CardShell({
   settle,
   onOpen,
   label,
+  readOnly = false,
   children,
 }: {
   className: string;
   isNext: boolean;
+  /** History (HIST-2): not tappable, no actions. */
+  readOnly?: boolean;
   /** Incremented when the meal becomes eaten → plays the soft scale "settle" once. */
   settle: number;
   onOpen: () => void;
@@ -57,6 +60,14 @@ export function CardShell({
     if ((e.target as HTMLElement).closest('button')) return;
     onOpen();
   };
+
+  if (readOnly) {
+    return (
+      <article ref={scope} className={className}>
+        {children}
+      </article>
+    );
+  }
 
   return (
     <article
@@ -85,9 +96,11 @@ export function MealCard({
   settle,
   onOpen,
   actions,
+  readOnly = false,
 }: {
   meal: Meal;
   log: DayLog;
+  readOnly?: boolean;
   isNext: boolean;
   /** True while this meal's detail sheet is open — the photo has flown into the sheet. */
   selected: boolean;
@@ -102,12 +115,12 @@ export function MealCard({
   const [confirmUndo, setConfirmUndo] = useState(false);
 
   return (
-    <CardShell className="rounded-[22px] bg-sage p-3.5 shadow-card" isNext={isNext} settle={settle} onOpen={onOpen} label={meal.name}>
+    <CardShell className="rounded-[22px] bg-sage p-3.5 shadow-card" isNext={isNext} settle={settle} onOpen={onOpen} label={meal.name} readOnly={readOnly}>
       <header className="flex items-start gap-3">
         {selected ? (
           <div style={{ width: 60, height: 60 }} className="shrink-0" />
         ) : (
-          <MealPhoto photoId={meal.photoId} size={60} layoutId={`photo-${meal.id}`} eaten={status === 'eaten'} />
+          <MealPhoto photoId={meal.photoId} size={60} layoutId={readOnly ? undefined : `photo-${meal.id}`} eaten={status === 'eaten'} />
         )}
         <div className="min-w-0 flex-1">
           <div className="flex justify-end">
@@ -162,8 +175,15 @@ export function MealCard({
         <span className="text-right whitespace-nowrap tabular">{macroText(subtotal)}</span>
       </div>
 
+      {/* History: just the status, no buttons. */}
+      {readOnly && (
+        <p className={`mt-2.5 text-right text-[12.5px] font-semibold ${status === 'eaten' ? 'text-forest' : status === 'partial' ? 'text-olive' : 'text-warm-grey'}`}>
+          {status === 'eaten' ? 'Eaten' : status === 'partial' ? 'Partly eaten' : 'Not eaten'}
+        </p>
+      )}
+
       {/* LOG-2: Eaten button; tapping again offers "Mark as not eaten". */}
-      <div className="mt-3 flex min-h-9 items-center justify-end gap-2">
+      {!readOnly && <div className="mt-3 flex min-h-9 items-center justify-end gap-2">
         <AnimatePresence mode="popLayout" initial={false}>
           {confirmUndo ? (
             <motion.div key="confirm" className="flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -203,7 +223,7 @@ export function MealCard({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </div>}
     </CardShell>
   );
 }

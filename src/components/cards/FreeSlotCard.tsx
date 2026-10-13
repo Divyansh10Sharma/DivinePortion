@@ -15,7 +15,9 @@ export function FreeSlotCard({
   selected,
   settle,
   onOpen,
+  readOnly = false,
 }: {
+  readOnly?: boolean;
   meal: Meal;
   log: DayLog;
   isNext: boolean;
@@ -35,12 +37,13 @@ export function FreeSlotCard({
       settle={settle}
       onOpen={onOpen}
       label={meal.name}
+      readOnly={readOnly}
     >
       <div className="flex items-start gap-3">
         {selected ? (
           <div style={{ width: 60, height: 60 }} className="shrink-0" />
         ) : (
-          <MealPhoto photoId={meal.photoId} size={60} layoutId={`photo-${meal.id}`} eaten={logged} />
+          <MealPhoto photoId={meal.photoId} size={60} layoutId={readOnly ? undefined : `photo-${meal.id}`} eaten={logged} />
         )}
         <div className="min-w-0 flex-1 pt-0.5">
           <h3 className="font-serif text-[17px] leading-snug font-semibold text-espresso">{meal.name}</h3>
@@ -71,14 +74,14 @@ export function FreeSlotCard({
         </>
       )}
 
-      <div className="mt-3 flex justify-end">
+      {!readOnly && <div className="mt-3 flex justify-end">
         <button
           onClick={onOpen}
           className="rounded-full border border-forest/50 px-3.5 py-1.5 text-[13px] font-semibold text-forest active:scale-[0.97]"
         >
           {entries.length ? 'Log more' : 'Log snack'}
         </button>
-      </div>
+      </div>}
     </CardShell>
   );
 }

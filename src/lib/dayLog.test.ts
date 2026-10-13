@@ -235,3 +235,18 @@ describe('next meal (HOME-9)', () => {
     expect(nextMealId(log, new Date(2026, 9, 13, 22, 0))).toBeUndefined();
   });
 });
+
+describe('final day status (HIST-1, §4.4 past days)', () => {
+  it('empty / warning / good', async () => {
+    const { finalDayStatus } = await import('./dayLog');
+    let log = fresh();
+    expect(finalDayStatus(log)).toBe('empty');
+    expect(targetStatus(log, { final: true }).fat.status).toBe('warning'); // nothing more to come
+    for (const m of log.mealsSnapshot) if (!m.isFreeSlot) log = markMealEaten(log, m.id);
+    expect(finalDayStatus(log)).toBe('warning'); // fat 39 < 45
+    log = addFreeSlotEntry(log, 'm3', makeLoggedItem('f', { name: 'Nuts', kcal: 100, fat: 7 }));
+    expect(finalDayStatus(log)).toBe('good'); // 2333 ≤ 2363, P 143, F 46, Fibre 58
+    log = addFreeSlotEntry(log, 'm3', makeLoggedItem('g', { name: 'Cake', kcal: 300 }));
+    expect(finalDayStatus(log)).toBe('warning'); // kcal over
+  });
+});

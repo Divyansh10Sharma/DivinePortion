@@ -9,13 +9,14 @@ import { useToday } from './hooks/useToday';
 import { useUiLocked } from './lib/uiLocks';
 import { TabBar, TAB_BAR_HEIGHT } from './components/nav/TabBar';
 import { TodayScreen } from './screens/TodayScreen';
+import { HistoryScreen } from './screens/HistoryScreen';
+import { prepareExport } from './hooks/backupFlow';
 import { PlanScreen } from './screens/PlanScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { applyPlanToToday, todayDiffersFromPlan } from './db/plan';
 import { setPlanChangePending, usePlanChangePending } from './hooks/planSync';
 import { Toaster } from './components/toast/Toaster';
 import { ConfirmDialog } from './components/dialog/ConfirmDialog';
-import { ComingSoon, ScreenShell } from './screens/PlaceholderScreen';
 
 /** Launch work: seed the DB if empty (§5), request persistent storage (IOS-10), clean up orphan photos (PHOTO-6). */
 function useBootstrap(): { ready: boolean; error: string | null } {
@@ -43,6 +44,7 @@ export default function App() {
   const plan = useLiveQuery(() => (ready ? db.plan.get('active') : undefined), [ready]);
   const settings = useLiveQuery(() => (ready ? db.settings.get('settings') : undefined), [ready]);
   const today = useToday(ready);
+  const logs = useLiveQuery(async () => (ready ? db.dayLogs.toArray() : undefined), [ready]);
   const locked = useUiLocked();
   const planChangePending = usePlanChangePending();
   const [askApplyToToday, setAskApplyToToday] = useState(false);
@@ -66,18 +68,24 @@ export default function App() {
     switch (t) {
       case 'today':
         return plan && settings && today.log ? (
-          <TodayScreen plan={plan} settings={settings} log={today.log} date={today.date} now={today.now} />
+          <TodayScreen
+            plan={plan}
+            settings={settings}
+            log={today.log}
+            date={today.date}
+            now={today.now}
+            onBackupNow={() => {
+              changeTab('settings');
+              void prepareExport();
+            }}
+          />
         ) : null;
       case 'history':
-        return (
-          <ScreenShell title="History">
-            <ComingSoon phase={5} what="the calendar and past days" />
-          </ScreenShell>
-        );
+        return logs ? <HistoryScreen logs={logs} today={today.date} /> : null;
       case 'plan':
         return plan ? <PlanScreen plan={plan} /> : null;
       case 'settings':
-        return <SettingsScreen />;
+        return settings ? <SettingsScreen settings={settings} today={today.date} /> : null;
     }
   }
 

@@ -34,6 +34,16 @@ Other scripts:
   - In an item, add a **base** (per 100 g / 100 ml / piece). Changing the amount then recalculates the values; typing a value makes them manual, and **Recalculate from base** switches back.
   - Changes apply from today onward. If you've already logged something today, leaving the Plan tab asks whether to apply them to today too. Past days never change.
 - **Photos:** add one to any meal or item (in its editor), or to an extra / snack entry, from the camera or the library. A **Move and scale** screen lets you drag and pinch to frame it in the circle; tap **Use photo**. Photos are compressed on the phone and stored only on the device.
+- **History:** a month calendar with a dot per logged day (green = targets met, terracotta = over calories or a minimum missed, grey = nothing eaten logged, olive = today), plus a list. Tap a day to see its poster exactly as logged.
+- **Settings:** daily targets (apply from today), the three poster footer items, backup, reset today's log, storage status and version.
+
+## Backup (do this regularly)
+iOS can clear the data of a home-screen app that isn't used for a while, and the installed app's data is separate from Safari.
+1. **Settings → Export backup**, then tap **Save backup file**.
+2. In the share sheet choose **Save to Files**, then **iCloud Drive** (e.g. a "Plate" folder), then **Save**.
+3. To restore: **Settings → Import backup**, pick the `plate-backup-YYYY-MM-DD.json` file, check the summary (days, photos, dates), then tap **Replace**. Everything in the app is replaced by the backup.
+
+If you haven't backed up for more than 7 days, a reminder appears on Today (you can hide it for a day).
 
 ## Preview at iPhone size
 Chrome → F12 → Toggle device toolbar (**Ctrl+Shift+M**) → choose **iPhone 12 Pro** (390×844, same as the 13 Pro).
@@ -71,7 +81,7 @@ vercel --prod   # production URL
 3. Share → **Add to Home Screen** → name "Plate" → Add.
 4. Launch from the home-screen icon. It opens standalone, with no browser bars.
 5. Test offline: turn on Airplane Mode and launch again. It must still work.
-6. Once backups exist (Phase 5): Settings → Export, and save the file to Files/iCloud.
+6. First thing: **Settings → Export backup → Save backup file → Save to Files** (iCloud Drive).
 
 > iOS keeps installed-PWA data separate from Safari tabs, and can evict it if the app isn't used for a long time. Export backups regularly.
 
@@ -81,13 +91,16 @@ assets/            icon-source.svg (single icon source)
 scripts/           generate-icons.mjs
 public/            generated icons, favicon
 src/
-  db/              Dexie schema (db.ts), seed data (seed.ts), day logs (dayLogs.ts), plan writes (plan.ts), photos.ts
-  lib/             types, nutrition math, day-log logic (dayLog.ts), plan editing (planEdit.ts), images.ts,
+  db/              Dexie schema (db.ts), seed data (seed.ts), day logs (dayLogs.ts), plan writes (plan.ts), photos.ts,
+                   settings.ts, backup.ts (export / import)
+  lib/             types, nutrition math, day-log logic (dayLog.ts), plan editing (planEdit.ts), images.ts, crop.ts,
+                   backup.ts (file format + validation),
                    PLAN-9 merge (planMerge.ts), local dates, formatting,
                    storage persistence, SW update policy, UI locks
   components/      poster/, timeline/, cards/, rings/, sheets/, inputs/, anim/, icons/, nav/,
                    plan/ (meal & item editors), dnd/ (sortable, swipe-to-delete), toast/, dialog/, photos/
-  screens/         Today, Plan, Settings, placeholders
-  hooks/           useActiveTab, useToday (local date + rollover), useLogActions, planSync (PLAN-9 prompt state)
+  screens/         Today, History, Plan, Settings
+  hooks/           useActiveTab, useToday (local date + rollover), useLogActions, planSync (PLAN-9 prompt state),
+                   backupFlow (export / share state)
   styles/          index.css (Tailwind v4, palette tokens, linen texture, iOS shell rules)
 ```

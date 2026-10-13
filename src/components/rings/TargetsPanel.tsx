@@ -43,7 +43,7 @@ function Ring({
 const ROW_LABEL: Record<NutrientKey, string> = { kcal: 'kcal', protein: 'P', carbs: 'C', fat: 'F', fibre: 'Fibre' };
 
 /** LOG-6 running totals (planned vs eaten) + LOG-7 target rings with §4.4 warning colours. */
-export function TargetsPanel({ totals, status }: { totals: DayTotals; status: TargetStatus }) {
+export function TargetsPanel({ totals, status, final = false }: { totals: DayTotals; status: TargetStatus; /** finished day (History) */ final?: boolean }) {
   const { kcal, protein, fat, fibre } = status;
   // Planned kcal includes the free-slot budget (that is what "eaten" will include too); macros don't.
   const planned = totals.plannedWithSnack;
@@ -68,9 +68,9 @@ export function TargetsPanel({ totals, status }: { totals: DayTotals; status: Ta
         <p className="mt-2.5 text-center text-[11.5px] leading-snug text-terracotta">
           {[
             kcal.over && `${fmt(kcal.eaten - kcal.target)} kcal over target`,
-            protein.status === 'warning' && `protein on course for ${fmt(protein.projected)}g`,
-            fat.status === 'warning' && `fat on course for ${fmt(fat.projected)}g`,
-            fibre.status === 'warning' && `fibre on course for ${fmt(fibre.projected)}g`,
+            protein.status === 'warning' && `protein ${final ? 'ended at' : 'on course for'} ${fmt(protein.projected)}g`,
+            fat.status === 'warning' && `fat ${final ? 'ended at' : 'on course for'} ${fmt(fat.projected)}g`,
+            fibre.status === 'warning' && `fibre ${final ? 'ended at' : 'on course for'} ${fmt(fibre.projected)}g`,
           ]
             .filter(Boolean)
             .join(' · ')}

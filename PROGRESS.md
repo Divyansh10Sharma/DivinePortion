@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-**Current phase:** Phase 4 complete — waiting for the owner's go-ahead for Phase 5.
+**Current phase:** Phase 5 complete — waiting for the owner's go-ahead for Phase 6.
 
 Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs to a later phase
 
@@ -40,9 +40,9 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 - [x] **Owner request:** crop step after picking a photo (see Decision 34)
 
 ### Phase 5 — History, settings, export/import
-- [ ] HIST-1, HIST-2
-- [ ] SET-1 … SET-7, LOG-8
-- [ ] Backup round-trip unit test (export → wipe → import → deep-equal, incl. photos)
+- [x] HIST-1, HIST-2
+- [x] SET-1 … SET-7, LOG-8
+- [x] Backup round-trip unit test (export → wipe → import → deep-equal, incl. photos)
 
 ### Phase 6 — Animation polish & iPhone QA
 - [ ] ANIM-1 … ANIM-12 complete and refined
@@ -83,9 +83,10 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | LOG-5 | ✅ | Free-slot sheet: name, kcal, optional P/C/F/fibre, **optional photo**, multiple entries, remove (Undo); budget remaining / over (terracotta) |
 | LOG-6 | ✅ | Targets panel table: Eaten vs Planned for kcal · P · C · F · Fibre. Planned kcal includes the free-slot budget |
 | LOG-7 | ✅ | Four rings (Calories of 2363, Protein / Fat / Fibre minimums) with the §4.4 colours and a check when met, plus a one-line text warning so colour isn't the only signal. Uses `DayLog.targetsSnapshot` |
-| LOG-8 | ⏳ | Phase 5 (Settings) |
-| §4.4 | ✅ (today) | kcal terracotta when eaten > target. Minimums are projected (eaten + unticked planned items of non-free-slot meals): terracotta if short, forest + check once met, olive in between. Seed day starts with fat "on course for 39g" as intended. The History part comes in Phase 5 |
-| HIST-1, HIST-2 | ⏳ | Phase 5 |
+| LOG-8 | ✅ | Settings → "Reset today's log" → confirmation → today is re-snapshotted from the current plan + targets (eaten state, extras and free-slot entries cleared; `createdAt` kept). Unit-tested |
+| §4.4 | ✅ | Today: kcal terracotta when eaten > target; minimums projected (eaten + unticked planned items of non-free-slot meals) → terracotta if short, forest + check once met, olive in between. Past days (History): `targetStatus(log, { final: true })` judges the final eaten amounts (terracotta if any minimum missed or kcal over); `finalDayStatus` drives the calendar dots. Unit-tested |
+| HIST-1 | ✅ | History tab: Monday-first month grid (prev/next limited to logged months), today ringed; days with a log are tappable and carry a dot: forest = targets met, terracotta = kcal over or a minimum missed, grey = nothing eaten logged, olive = today (in progress), plus a key. Below: "Logged days" list, newest first, with eaten kcal / target and P, F, fibre |
+| HIST-2 | ✅ | Tap a day → read-only poster: date, the targets that applied, rings + Eaten vs Planned (final status), the timeline with eaten / partly / not eaten per meal, ticked items, extras, free-slot entries, then the totals bar. No buttons, no sheets. Checked in the browser |
 | HIST-3 | ✅ | `ensureDayLog` never rewrites an existing log; plan writes only touch today's log (`updatePlan` / `applyPlanToToday`). Unit-tested in `src/db/plan.test.ts`: several plan edits, a silent sync and a merge leave yesterday's log deep-equal to before |
 | PLAN-1 | ✅ | Plan tab: add meal, delete (swipe left or "Delete meal" in the editor; Undo toast), rename (editor), reorder by dragging the ⋮⋮ grip (dnd-kit; drag starts only from the handle, so scrolling and swiping elsewhere still work). Verified in headless Chrome |
 | PLAN-2 | ✅ | Time (iOS time wheel, validated `HH:MM`), name, icon, photo (add / replace / remove), badge and note are all editable |
@@ -103,8 +104,13 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | PHOTO-4 | ✅ | A 24 px (long edge) JPEG thumbnail data URL is stored with each photo |
 | PHOTO-5 | ✅ | `PlatePlaceholder` SVG: porcelain plate (rim, inner shadow, gold line) on linen. Shown wherever a meal / item / entry has no photo (cards, sheets, editor rows) |
 | PHOTO-6 | ✅ | Replace = pick again; Remove = button. `deleteOrphanPhotos` removes photos referenced by neither the plan nor **any** DayLog (snapshots, extras, entries). It runs on launch and 15 s after a removal / delete, i.e. after the Undo window; photos younger than 10 min are kept (they may sit in an unsaved form). Unit-tested, including "a past day still uses it → kept" |
-| SET-1 … SET-6 | ⏳ | Phase 5 |
-| SET-7 | ⚠️ | Storage status + version already shown in Settings; the full Settings screen comes in Phase 5 |
+| SET-1 | ✅ | Daily targets (kcal, protein / fat / fibre minimums) with decimal inputs. New targets also update **today's** `targetsSnapshot`; past days keep theirs. Unit-tested |
+| SET-2 | ✅ | Three footer items: text field + icon choice (droplet, leaf, coffee, clock, sun, moon, apple, star, sparkle); the poster footer updates live |
+| SET-3 | ✅ | "Export backup" builds `plate-backup-YYYY-MM-DD.json` (`app`, `schemaVersion`, `exportedAt`, settings, plan, all day logs, all photos as base64). "Save backup file" uses `navigator.share({ files })` when `navigator.canShare` allows (iOS → Save to Files / iCloud), otherwise an `<a download>`. `lastBackupAt` is set only after a successful share or download (a cancelled share sheet doesn't count). Both paths checked in the browser |
+| SET-4 | ✅ | "Import backup" (.json): checks structure (settings, plan meals and items, every day log incl. extras / entries, photos incl. base64) and `schemaVersion` (newer → refused with a message). Shows days, photos, date range and export date, asks for confirmation, then replaces everything in **one Dexie transaction**. Afterwards today's log is recreated if the backup didn't contain it. Unit-tested (round-trip + rejections) and checked in the browser |
+| SET-5 | ✅ | "Last backup: Today / Yesterday / X days ago / Never" in Settings. Today banner when the last backup is > 7 days old (or never, after 7 days of use), dismissible for 24 h; "Back up now" opens Settings with the backup already being prepared. Unit-tested rules, checked in the browser |
+| SET-6 | ✅ | = LOG-8 |
+| SET-7 | ✅ | About: storage persistence ("persistent / may be evicted") and app version |
 | NAV-1 | ✅ | Frosted cream glass (`-webkit-backdrop-filter` too), gold hairline, safe-area bottom, active tab forest + sliding indicator |
 | NAV-2 | ✅ | State-based tabs with optional `#history` / `#plan` / `#settings` hash (`replaceState`, no router) |
 | ANIM-1 | ✅ (basic) | Timeline line scaleY from top, cards fade + rise with 70ms stagger |
@@ -119,15 +125,17 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | ANIM-9 | ✅ | The blurred 24 px thumbnail shows at once (CSS blur, slightly scaled); the full image fades in over it (opacity) once loaded |
 | ANIM-10, ANIM-12 | ⏳ | Phase 6 (everything so far animates only transform / opacity / SVG stroke) |
 
-Unit tests (Vitest, 70 passing):
+Unit tests (Vitest, 80 passing):
 - `src/lib/nutrition.test.ts`: scaling, compatibility, eaten value, meal status, planned totals, display rounding.
 - `src/db/seed.test.ts`: §4.3 per-meal and day totals, seed only when empty.
-- `src/lib/dayLog.test.ts` (runs in IST): local date vs `toISOString` at 04:45, midnight rollover, deep-copy day creation, whole / partial meals (with and without a base), over-eating, extras, free slot entries and budget, §4.4 projections, next meal.
+- `src/lib/dayLog.test.ts` (runs in IST): local date vs `toISOString` at 04:45, midnight rollover, deep-copy day creation, whole / partial meals (with and without a base), over-eating, extras, free slot entries and budget, §4.4 projections, next meal, final (History) day status.
 - `src/db/dayLogs.test.ts`: create once, later plan changes don't leak into an existing day, the next day snapshots the new plan.
 - `src/lib/format.test.ts`: decimal parsing (`1,5` / `1.5`), display rounding.
 - `src/lib/planEdit.test.ts`: smart scaling (amount → base, manual switch, recalculate, incompatible unit, add/edit/remove base, per-piece), move/remove/insert-at (undo), free-slot toggle, time validation.
 - `src/lib/planMerge.test.ts`: PLAN-9 silent sync vs ask; merge keeps surviving eaten state / extras / free-slot entries and drops deleted ones; free-slot flips.
 - `src/db/plan.test.ts`: **HIST-3** (past log unchanged after edits, sync and merge), PLAN-9 end-to-end in IndexedDB, plan writes bump `updatedAt`.
+- `src/db/backup.test.ts`: **backup round-trip** (export → wipe → put other data → import → deep-equal settings, plan, all day logs and photo bytes incl. a 200 KB photo), import into an empty DB, validation rejections (not JSON, not Plate, newer schema, damaged plan / day / photo), base64, file name, "Last backup" labels, banner rules.
+- `src/db/settings.test.ts`: targets apply to today but not past days; reset today.
 - `src/lib/crop.test.ts`: crop maths (cover + centre, the square always stays covered, zoom keeps the pinch point fixed, 1×–5× limits, portrait / landscape).
 - `src/db/photos.test.ts`: `fitWithin` (1000 px cap, no upscaling), ArrayBuffer round-trip, orphan clean-up (keeps plan / past-day / entry photos and fresh ones, deletes true orphans).
 
@@ -169,3 +177,11 @@ Unit tests (Vitest, 70 passing):
 32. **Thumbnail blur** is applied when displayed (CSS `blur`) rather than baked into the data URL; the stored thumbnail is a plain 24 px JPEG.
 33. **Version:** 0.4.0 for Phase 4.
 34. **Photo crop (owner request after Phase 4 iPhone testing, not in SPEC.md).** The iOS file picker offers no crop for web pages, so every picked or taken photo opens an in-app **Move and scale** screen: drag to move, pinch / slider / mouse wheel to zoom (1×–5×), with a circle guide because photos show in round frames. **Use photo** stores the square around the circle (≤ 1000 px JPEG, same rules as PHOTO-2); **Cancel** stores nothing. Only the cropped image is kept, not the original. It applies to camera shots too, since a web page can't tell camera from library. Version 0.4.1.
+35. **Export is two taps** ("Export backup" → "Save backup file"). iOS only opens the share sheet straight after a tap, and building the file (reading every photo) can take long enough to lose that permission. The second tap shares a file that is already built.
+36. **Targets apply from today:** editing targets updates today's `targetsSnapshot` too, so today's rings change immediately; past days keep the targets that applied then (HIST-2 shows them).
+37. **Day dots:** the spec's "colour dot reflects kcal vs target" uses the §4.4 past-day rule (terracotta if kcal over **or** a minimum missed), plus grey for days with nothing eaten logged and olive for today (still in progress).
+38. **Calendar weeks start on Monday.** Months can be browsed back to the first logged month.
+39. **Import also recreates today's log** if the backup doesn't contain today, so the Today tab is never empty after a restore.
+40. **Backup validation** checks everything the app relies on (and that the base64 photo data decodes); unknown extra fields are kept as they are.
+41. **The "Back up now" banner** switches to Settings and starts preparing the file; the owner then taps "Save backup file".
+42. **Version:** 0.5.0 for Phase 5.

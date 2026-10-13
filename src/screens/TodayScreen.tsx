@@ -8,6 +8,9 @@ import { PosterFooter } from '../components/poster/PosterFooter';
 import { Timeline } from '../components/timeline/Timeline';
 import { TargetsPanel } from '../components/rings/TargetsPanel';
 import { MealSheet } from '../components/sheets/MealSheet';
+import { BackupBanner } from '../components/poster/BackupBanner';
+import { shouldShowBackupBanner } from '../lib/backup';
+import { dismissBackupBanner } from '../db/settings';
 
 /**
  * HOME-1: today's poster, rendered from today's DayLog snapshot (LOG-1) with logging (LOG-2…7, HOME-9).
@@ -18,7 +21,10 @@ export function TodayScreen({
   log,
   date,
   now,
+  onBackupNow,
 }: {
+  /** SET-5 banner action: go to Settings and start preparing the export. */
+  onBackupNow: () => void;
   plan: Plan;
   settings: Settings;
   log: DayLog;
@@ -37,6 +43,9 @@ export function TodayScreen({
   return (
     <div className="mx-auto max-w-[480px]">
       <PosterHeader kcal={totals.plannedWithSnack.kcal} protein={totals.plannedMeals.protein} title={plan.title} />
+      {shouldShowBackupBanner(settings, now.getTime()) && (
+        <BackupBanner lastBackupAt={settings.lastBackupAt} onBackup={onBackupNow} onDismiss={() => void dismissBackupBanner()} />
+      )}
       <div className="px-4">
         <div className="mb-6">
           <TargetsPanel totals={totals} status={status} />
