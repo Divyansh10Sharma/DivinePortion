@@ -62,7 +62,7 @@ export function SortableRow({ id, children }: { id: string; children: (handle: H
     transition,
     position: 'relative',
     zIndex: isDragging ? 20 : undefined,
-    boxShadow: isDragging ? '0 18px 32px -16px rgb(42 36 32 / 0.45)' : undefined,
+    boxShadow: isDragging ? '0 18px 32px -16px var(--deep-shadow)' : undefined,
     borderRadius: 18,
   };
 

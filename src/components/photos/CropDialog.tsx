@@ -94,14 +94,14 @@ export function CropDialog({
       role="dialog"
       aria-modal="true"
       aria-label="Crop photo"
-      className="fixed inset-0 z-[80] flex flex-col items-center justify-center bg-espresso"
+      className="fixed inset-0 z-[80] flex flex-col items-center justify-center bg-[#15110e]"
       style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <p className="mb-1 font-serif text-[22px] font-semibold text-cream">Move and scale</p>
-      <p className="mb-5 text-[13px] text-cream/60">Drag to move · pinch to zoom</p>
+      <p className="mb-1 font-serif text-[22px] font-semibold text-[#f6f1e7]">Move and scale</p>
+      <p className="mb-5 text-[13px] text-[#f6f1e7]/60">Drag to move · pinch to zoom</p>
 
       <div
         className="relative cursor-grab touch-none overflow-hidden rounded-[18px] bg-black select-none active:cursor-grabbing"
@@ -128,7 +128,7 @@ export function CropDialog({
       </div>
 
       <div className="mt-6 flex w-full items-center gap-3 px-8" style={{ maxWidth: V + 64 }}>
-        <ZoomOut size={18} className="shrink-0 text-cream/70" aria-hidden />
+        <ZoomOut size={18} className="shrink-0 text-[#f6f1e7]/70" aria-hidden />
         <input
           type="range"
           aria-label="Zoom"
@@ -139,14 +139,14 @@ export function CropDialog({
           onChange={(e) => setZoom(Number(e.target.value))}
           className="w-full accent-[#C9A96E]"
         />
-        <ZoomIn size={18} className="shrink-0 text-cream/70" aria-hidden />
+        <ZoomIn size={18} className="shrink-0 text-[#f6f1e7]/70" aria-hidden />
       </div>
 
       <div className="mt-8 grid w-full grid-cols-2 gap-3 px-6" style={{ maxWidth: V + 48 }}>
-        <button onClick={onCancel} className="rounded-full border border-cream/30 py-3 text-[15px] font-semibold text-cream">
+        <button onClick={onCancel} className="rounded-full border border-[#f6f1e7]/30 py-3 text-[15px] font-semibold text-[#f6f1e7]">
           Cancel
         </button>
-        <button onClick={confirm} className="rounded-full bg-cream py-3 text-[15px] font-semibold text-forest">
+        <button onClick={confirm} className="rounded-full bg-[#f6f1e7] py-3 text-[15px] font-semibold text-[#1f4d2e]">
           Use photo
         </button>
       </div>

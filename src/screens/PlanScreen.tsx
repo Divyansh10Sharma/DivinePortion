@@ -79,7 +79,7 @@ export function PlanScreen({ plan }: { plan: Plan }) {
           value={plan.title}
           onCommit={(title) => savePlan((p) => ({ ...p, title }))}
           unstyled
-          className="mt-1 w-full rounded-xl border border-transparent bg-transparent py-1 font-serif text-[28px] font-bold text-forest outline-none focus:border-gold/50 focus:bg-white/70 focus:px-3"
+          className="mt-1 w-full rounded-xl border border-transparent bg-transparent py-1 font-serif text-[28px] font-bold text-forest outline-none focus:border-gold/50 focus:bg-field focus:px-3"
         />
       </label>
       <p className="mt-1 text-[12.5px] text-warm-grey tabular">

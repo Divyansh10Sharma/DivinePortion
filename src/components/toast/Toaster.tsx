@@ -18,7 +18,7 @@ export function Toaster() {
           <motion.div
             key={toast.id}
             role="status"
-            className="pointer-events-auto flex w-full max-w-[440px] items-center gap-3 rounded-2xl bg-espresso py-2.5 pr-2 pl-4 text-[14px] text-cream shadow-[0_10px_30px_-10px_rgb(42_36_32/0.5)]"
+            className="pointer-events-auto flex w-full max-w-[440px] items-center gap-3 rounded-2xl bg-toast py-2.5 pr-2 pl-4 text-[14px] text-toast-fg shadow-[0_10px_30px_-10px_rgb(42_36_32/0.5)]"
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
@@ -31,7 +31,7 @@ export function Toaster() {
                   toast.onAction?.();
                   dismissToast(toast.id);
                 }}
-                className="shrink-0 rounded-xl px-3 py-1.5 font-semibold text-[#9FD2A8] active:bg-white/10"
+                className="shrink-0 rounded-xl px-3 py-1.5 font-semibold text-toast-action active:opacity-70"
               >
                 {toast.actionLabel}
               </button>

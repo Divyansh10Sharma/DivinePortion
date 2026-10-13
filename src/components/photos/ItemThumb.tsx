@@ -4,7 +4,7 @@ import { PhotoView } from './PhotoView';
 export function ItemThumb({ photoId, size = 36 }: { photoId: string | undefined; size?: number }) {
   return (
     <span
-      className="block shrink-0 overflow-hidden rounded-full bg-porcelain p-[2px] ring-1 ring-[#E4DACA]"
+      className="block shrink-0 overflow-hidden rounded-full bg-porcelain p-[2px] ring-1 ring-rim"
       style={{ width: size, height: size }}
       aria-hidden
     >

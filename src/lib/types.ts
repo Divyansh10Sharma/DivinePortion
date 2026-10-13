@@ -80,6 +80,8 @@ export interface Settings {
   footerItems: { icon: FooterIcon; text: string }[];
   lastBackupAt?: number;
   backupBannerDismissedAt?: number;
+  /** Owner request after Phase 6. Missing = dark (the default). */
+  theme?: 'dark' | 'light';
   seededAt: number;
   schemaVersion: number;
 }

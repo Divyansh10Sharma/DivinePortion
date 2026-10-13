@@ -121,7 +121,7 @@ function MealForm({
         <TextInput value={meal.note ?? ''} onCommit={(note) => onChange((m) => (note ? { ...m, note } : omitKey(m, 'note')))} />
       </Field>
 
-      <div className="rounded-2xl border border-dashed border-olive/50 bg-white/50 px-3.5 py-2.5">
+      <div className="rounded-2xl border border-dashed border-olive/50 bg-field px-3.5 py-2.5">
         <Toggle label="Free slot" checked={meal.isFreeSlot} onChange={(v) => onChange((m) => setFreeSlot(m, v))} />
         {meal.isFreeSlot && (
           <div className="mt-2.5 space-y-3 pb-1">

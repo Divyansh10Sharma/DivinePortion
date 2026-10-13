@@ -25,7 +25,7 @@ export function NumberInput({ value, onCommit, className = '', onFocus, onBlur, 
       autoComplete="off"
       enterKeyHint="done"
       value={shown}
-      className={`tabular rounded-xl border border-gold/50 bg-white/80 px-2.5 py-1.5 text-espresso outline-none focus:border-forest focus:ring-2 focus:ring-forest/15 ${className}`}
+      className={`tabular rounded-xl border border-gold/50 bg-field px-2.5 py-1.5 text-espresso outline-none focus:border-forest focus:ring-2 focus:ring-forest/15 ${className}`}
       onFocus={(e) => {
         setDraft(shown);
         onFocus?.(e);

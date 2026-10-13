@@ -70,7 +70,7 @@ export function PhotoPicker({
         type="button"
         onClick={() => input.current?.click()}
         aria-label={photoId ? `Replace ${label}` : `Add ${label}`}
-        className="relative shrink-0 rounded-full bg-porcelain p-[3px] shadow-[0_1px_2px_rgb(42_36_32/0.08),0_6px_14px_-6px_rgb(42_36_32/0.18)] ring-1 ring-[#E4DACA]"
+        className="relative shrink-0 rounded-full bg-porcelain p-[3px] shadow-[0_1px_2px_rgb(42_36_32/0.08),0_6px_14px_-6px_rgb(42_36_32/0.18)] ring-1 ring-rim"
         style={{ width: size, height: size }}
       >
         <PhotoView photoId={photoId} size={size - 6} />

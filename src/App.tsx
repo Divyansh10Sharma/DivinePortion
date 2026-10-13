@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedIfEmpty } from './db/db';
@@ -11,6 +11,8 @@ import { TabBar, TAB_BAR_HEIGHT } from './components/nav/TabBar';
 import { TodayScreen } from './screens/TodayScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { prepareExport } from './hooks/backupFlow';
+import { ScrollContainerContext } from './hooks/scrollContainer';
+import { applyTheme, DEFAULT_THEME } from './lib/theme';
 import { PlanScreen } from './screens/PlanScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { applyPlanToToday, todayDiffersFromPlan } from './db/plan';
@@ -46,7 +48,14 @@ export default function App() {
   const today = useToday(ready);
   const logs = useLiveQuery(async () => (ready ? db.dayLogs.toArray() : undefined), [ready]);
   const locked = useUiLocked();
+
+  // Theme: Settings is the source of truth (it's also restored by an import); keep the page in sync.
+  const theme = settings?.theme ?? DEFAULT_THEME;
+  useEffect(() => {
+    if (settings) applyTheme(theme);
+  }, [settings, theme]);
   const planChangePending = usePlanChangePending();
+  const todayScroller = useRef<HTMLElement>(null);
   const [askApplyToToday, setAskApplyToToday] = useState(false);
 
   // PLAN-9: when leaving the Plan tab after edits that couldn't be synced silently (today already
@@ -96,8 +105,8 @@ export default function App() {
         className="relative h-full overflow-hidden"
         style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       >
-        {/* IOS-2: solid cream under the status bar so scrolled content never collides with the clock. */}
-        <div aria-hidden className="absolute inset-x-0 top-0 z-20 bg-cream" style={{ height: 'env(safe-area-inset-top)' }} />
+        {/* IOS-2: a frosted strip under the status bar so scrolled content never collides with the clock. */}
+        <div aria-hidden className="frosted absolute inset-x-0 top-0 z-20" style={{ height: 'env(safe-area-inset-top)' }} />
 
         {error && (
           <p className="p-6 pt-16 text-center text-terracotta">Could not open the on-device database: {error}</p>
@@ -107,6 +116,7 @@ export default function App() {
         {TABS.map((t) => (
           <main
             key={t}
+            ref={t === 'today' ? todayScroller : undefined}
             hidden={t !== tab}
             className="scroll-area absolute inset-0"
             style={{
@@ -116,7 +126,11 @@ export default function App() {
               paddingBottom: `calc(${TAB_BAR_HEIGHT + 24}px + env(safe-area-inset-bottom))`,
             }}
           >
-            {renderScreen(t)}
+            {t === 'today' ? (
+              <ScrollContainerContext.Provider value={todayScroller}>{renderScreen(t)}</ScrollContainerContext.Provider>
+            ) : (
+              renderScreen(t)
+            )}
           </main>
         ))}
 

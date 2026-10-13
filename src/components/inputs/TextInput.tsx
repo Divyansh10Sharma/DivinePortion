@@ -8,7 +8,7 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> &
 };
 
 export const fieldClass =
-  'w-full rounded-xl border border-gold/50 bg-white/80 px-3 py-2 text-espresso outline-none placeholder:text-warm-grey/70 focus:border-forest focus:ring-2 focus:ring-forest/15';
+  'w-full rounded-xl border border-gold/50 bg-field px-3 py-2 text-espresso outline-none placeholder:text-warm-grey/70 focus:border-forest focus:ring-2 focus:ring-forest/15';
 
 /**
  * Text field bound to stored data. Each keystroke is committed (saved to IndexedDB), but the field

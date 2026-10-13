@@ -27,7 +27,7 @@ export function ConfirmDialog({
       {open && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center px-6">
           <motion.div
-            className="absolute inset-0 bg-espresso/40"
+            className="absolute inset-0 bg-scrim"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -37,7 +37,7 @@ export function ConfirmDialog({
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="confirm-title"
-            className="relative w-full max-w-[340px] rounded-[24px] bg-porcelain p-5 text-center shadow-[0_24px_60px_-20px_rgb(42_36_32/0.5)]"
+            className="relative w-full max-w-[340px] rounded-[24px] bg-porcelain p-5 text-center shadow-[0_24px_60px_-20px_var(--deep-shadow)]"
             initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}

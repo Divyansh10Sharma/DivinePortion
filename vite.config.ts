@@ -4,7 +4,8 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import pkg from './package.json' with { type: 'json' };
 
-const CREAM = '#F6F1E7';
+// Splash / UI colour: the default (dark) theme's background.
+const APP_BG = '#0F1A14';
 
 export default defineConfig({
   define: {
@@ -27,8 +28,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: CREAM,
-        theme_color: CREAM,
+        background_color: APP_BG,
+        theme_color: APP_BG,
         icons: [
           { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },

@@ -32,7 +32,10 @@ export function FreeSlotCard({
 
   return (
     <CardShell
-      className="rounded-[22px] border-[1.5px] border-dashed border-olive/70 bg-porcelain p-3.5 shadow-card"
+      className="p-3.5"
+      surfaceClass="border-[1.5px] border-dashed border-olive/70 bg-porcelain shadow-card"
+      surfaceId={`card-${meal.id}`}
+      selected={selected}
       isNext={isNext}
       settle={settle}
       onOpen={onOpen}
@@ -43,7 +46,7 @@ export function FreeSlotCard({
         {selected ? (
           <div style={{ width: 60, height: 60 }} className="shrink-0" />
         ) : (
-          <MealPhoto photoId={meal.photoId} size={60} layoutId={readOnly ? undefined : `photo-${meal.id}`} eaten={logged} />
+          <MealPhoto photoId={meal.photoId} size={60} layoutId={readOnly ? undefined : `photo-${meal.id}`} eaten={logged} parallax={!readOnly} />
         )}
         <div className="min-w-0 flex-1 pt-0.5">
           <h3 className="font-serif text-[17px] leading-snug font-semibold text-espresso">{meal.name}</h3>

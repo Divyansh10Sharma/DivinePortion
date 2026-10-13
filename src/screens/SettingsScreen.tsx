@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
-import { Download, FileUp, Loader2, RotateCcw, Share } from 'lucide-react';
+import { Download, FileUp, Loader2, Moon, RotateCcw, Share, Sun } from 'lucide-react';
 import { getPersistenceStatus, type PersistenceStatus } from '../lib/storage';
 import { lastBackupLabel, parseBackup, type BackupFile, type BackupSummary } from '../lib/backup';
 import { localDateKey } from '../lib/dates';
@@ -15,6 +15,7 @@ import { TextInput } from '../components/inputs/TextInput';
 import { ConfirmDialog } from '../components/dialog/ConfirmDialog';
 import { FooterGlyph } from '../components/icons/icons';
 import { showToast } from '../components/toast/toastStore';
+import { applyTheme, DEFAULT_THEME, type Theme } from '../lib/theme';
 
 const STATUS_LABEL: Record<PersistenceStatus, string> = {
   persistent: 'persistent',
@@ -110,6 +111,41 @@ export function SettingsScreen({ settings, today }: { settings: Settings; today:
   return (
     <div className="mx-auto max-w-[480px] px-4 pt-6">
       <h1 className="font-serif text-[28px] font-bold text-forest">Settings</h1>
+
+      {/* Appearance (owner request after Phase 6) */}
+      <Card title="Appearance">
+        <div className="py-3">
+          <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-1 rounded-full bg-field p-1">
+            {(
+              [
+                { id: 'dark', label: 'Dark', icon: Moon },
+                { id: 'light', label: 'Light', icon: Sun },
+              ] as { id: Theme; label: string; icon: typeof Moon }[]
+            ).map(({ id, label, icon: Icon }) => {
+              const selected = (settings.theme ?? DEFAULT_THEME) === id;
+              return (
+                <button
+                  key={id}
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => {
+                    applyTheme(id); // instant, before the DB round-trip
+                    void updateSettings((s) => ({ ...s, theme: id }));
+                  }}
+                  className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-[14px] font-semibold ${
+                    selected ? 'bg-forest text-cream' : 'text-forest'
+                  }`}
+                >
+                  <Icon size={16} aria-hidden /> {label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[12px] leading-snug text-warm-grey">
+            On the installed iPhone app, the status-bar colour follows after the next launch.
+          </p>
+        </div>
+      </Card>
 
       {/* SET-1 */}
       <Card title="Daily targets">

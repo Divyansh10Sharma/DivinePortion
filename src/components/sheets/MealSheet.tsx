@@ -31,7 +31,14 @@ export function MealSheet({
   onClose: () => void;
 }) {
   return (
-    <BottomSheet open={!!meal} onClose={onClose} label={meal?.name ?? 'Meal'} header={meal && <SheetHeader meal={meal} log={log} />}>
+    // ANIM-5: the sheet's surface shares a layoutId with the tapped card, so the card expands into it.
+    <BottomSheet
+      open={!!meal}
+      onClose={onClose}
+      label={meal?.name ?? 'Meal'}
+      layoutId={meal ? `card-${meal.id}` : undefined}
+      header={meal && <SheetHeader meal={meal} log={log} />}
+    >
       {meal && (meal.isFreeSlot ? <FreeSlotBody meal={meal} log={log} actions={actions} /> : <MealBody meal={meal} log={log} actions={actions} />)}
     </BottomSheet>
   );
@@ -155,7 +162,7 @@ function ItemRow({
         aria-label={`${item.name} eaten`}
         onClick={() => onToggle(!ticked)}
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors ${
-          ticked ? 'border-forest bg-forest text-cream' : 'border-warm-grey/50 bg-white text-transparent'
+          ticked ? 'border-forest bg-forest text-cream' : 'border-warm-grey/50 bg-field text-transparent'
         }`}
       >
         {ticked && <DrawnCheck size={15} />}
@@ -255,7 +262,7 @@ function FreeSlotBody({ meal, log, actions }: { meal: Meal; log: DayLog; actions
 function AddSection({ title, initiallyOpen = false, children }: { title: string; initiallyOpen?: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(initiallyOpen);
   return (
-    <div className="rounded-2xl border border-dashed border-olive/50 bg-white/50 p-3">
+    <div className="rounded-2xl border border-dashed border-olive/50 bg-field p-3">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between text-[13.5px] font-semibold text-forest">
         <span className="flex items-center gap-1.5">
           <Plus size={16} aria-hidden /> {title}

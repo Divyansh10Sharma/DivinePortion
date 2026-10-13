@@ -156,7 +156,7 @@ function ItemForm({ item, onChange, onDelete }: { item: Item; onChange: (update:
         </div>
       ) : (
         <div className="space-y-3 rounded-2xl bg-sage p-3.5">
-          <div role="radiogroup" aria-label="Base per" className="grid grid-cols-3 gap-1 rounded-full bg-white/70 p-1">
+          <div role="radiogroup" aria-label="Base per" className="grid grid-cols-3 gap-1 rounded-full bg-field p-1">
             {PERS.map(({ per, label }) => (
               <button
                 key={per}

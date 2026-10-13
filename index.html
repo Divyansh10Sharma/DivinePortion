@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <!-- IOS-1: viewport-fit=cover so we can paint under the notch and pad with safe-area insets -->
@@ -7,10 +7,25 @@
     <!-- IOS-4 -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <!-- IOS-5: "default" = dark status-bar text, readable on cream -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- IOS-5 + dark theme (owner request): dark (default) uses white status-bar text over the
+         dark top strip; light uses "default" (dark text on cream). The inline script below picks
+         the saved theme before first paint; iOS reads these metas when the installed app launches. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Plate" />
-    <meta name="theme-color" content="#F6F1E7" />
+    <meta name="theme-color" content="#0F1A14" />
+    <script>
+      (function () {
+        var t = 'dark';
+        try {
+          t = localStorage.getItem('plate-theme') === 'light' ? 'light' : 'dark';
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', t);
+        if (t === 'light') {
+          document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').setAttribute('content', 'default');
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#F6F1E7');
+        }
+      })();
+    </script>
     <!-- IOS-3 -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />

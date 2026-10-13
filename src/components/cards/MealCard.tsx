@@ -27,9 +27,19 @@ function NoteBadge({ text }: { text: string }) {
   );
 }
 
-/** Shared card chrome: tap anywhere (except buttons) opens the detail sheet; HOME-9 "next" glow; ANIM-3 settle. */
+const SURFACE_SPRING = { type: 'spring', stiffness: 380, damping: 38 } as const;
+
+/**
+ * Shared card chrome: tap anywhere (except buttons) opens the detail sheet; HOME-9 "next" glow; ANIM-3 settle.
+ * ANIM-5: the card's background is a separate "surface" layer with a layoutId shared with the bottom
+ * sheet's surface, so the card itself expands into the sheet. While the sheet is open the card's
+ * surface lives in the sheet and the card's content fades out (its space in the timeline is kept).
+ */
 export function CardShell({
   className,
+  surfaceClass,
+  surfaceId,
+  selected = false,
   isNext,
   settle,
   onOpen,
@@ -37,7 +47,14 @@ export function CardShell({
   readOnly = false,
   children,
 }: {
+  /** Layout / padding classes of the card. */
   className: string;
+  /** Background, border and shadow of the card surface. */
+  surfaceClass: string;
+  /** Shared-layout id linking this card to its detail sheet. */
+  surfaceId: string;
+  /** True while this card's sheet is open. */
+  selected?: boolean;
   isNext: boolean;
   /** History (HIST-2): not tappable, no actions. */
   readOnly?: boolean;
@@ -63,8 +80,9 @@ export function CardShell({
 
   if (readOnly) {
     return (
-      <article ref={scope} className={className}>
-        {children}
+      <article ref={scope} className={`relative ${className}`}>
+        <div aria-hidden className={`absolute inset-0 ${surfaceClass}`} style={{ borderRadius: 22 }} />
+        <div className="relative">{children}</div>
       </article>
     );
   }
@@ -77,12 +95,29 @@ export function CardShell({
       aria-label={`${label} — open details`}
       onClick={open}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && open(e)}
-      className={`${className} cursor-pointer transition-shadow duration-500 ${
+      className={`relative rounded-[22px] ${className} cursor-pointer transition-shadow duration-500 ${
         // HOME-9: the next meal gets a soft forest ring + glow.
-        isNext ? 'ring-2 ring-forest/30 shadow-[0_0_0_6px_rgb(31_77_46/0.06),var(--shadow-card)]' : ''
+        isNext && !selected ? 'ring-2 ring-forest/30 shadow-[0_0_0_6px_rgb(31_77_46/0.06)]' : ''
       }`}
     >
-      {children}
+      {!selected && (
+        <motion.div
+          aria-hidden
+          layoutId={surfaceId}
+          className={`absolute inset-0 ${surfaceClass}`}
+          // radius in style so motion keeps it round while the surface morphs
+          style={{ borderRadius: 22 }}
+          transition={SURFACE_SPRING}
+        />
+      )}
+      <motion.div
+        className="relative"
+        initial={false}
+        animate={{ opacity: selected ? 0 : 1 }}
+        transition={{ duration: selected ? 0.1 : 0.25, delay: selected ? 0 : 0.18 }}
+      >
+        {children}
+      </motion.div>
     </article>
   );
 }
@@ -115,12 +150,22 @@ export function MealCard({
   const [confirmUndo, setConfirmUndo] = useState(false);
 
   return (
-    <CardShell className="rounded-[22px] bg-sage p-3.5 shadow-card" isNext={isNext} settle={settle} onOpen={onOpen} label={meal.name} readOnly={readOnly}>
+    <CardShell
+      className="p-3.5"
+      surfaceClass="bg-sage shadow-card"
+      surfaceId={`card-${meal.id}`}
+      selected={selected}
+      isNext={isNext}
+      settle={settle}
+      onOpen={onOpen}
+      label={meal.name}
+      readOnly={readOnly}
+    >
       <header className="flex items-start gap-3">
         {selected ? (
           <div style={{ width: 60, height: 60 }} className="shrink-0" />
         ) : (
-          <MealPhoto photoId={meal.photoId} size={60} layoutId={readOnly ? undefined : `photo-${meal.id}`} eaten={status === 'eaten'} />
+          <MealPhoto photoId={meal.photoId} size={60} layoutId={readOnly ? undefined : `photo-${meal.id}`} eaten={status === 'eaten'} parallax={!readOnly} />
         )}
         <div className="min-w-0 flex-1">
           <div className="flex justify-end">

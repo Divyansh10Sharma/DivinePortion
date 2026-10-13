@@ -22,7 +22,7 @@ const MACROS: { key: 'protein' | 'carbs' | 'fat' | 'fibre'; label: string }[] = 
 ];
 
 const inputClass =
-  'w-full rounded-xl border border-gold/50 bg-white/80 px-3 py-2 text-espresso outline-none placeholder:text-warm-grey/70 focus:border-forest focus:ring-2 focus:ring-forest/15';
+  'w-full rounded-xl border border-gold/50 bg-field px-3 py-2 text-espresso outline-none placeholder:text-warm-grey/70 focus:border-forest focus:ring-2 focus:ring-forest/15';
 
 /**
  * Quick entry for today-only extras (LOG-4, with amount + unit) and free-slot entries

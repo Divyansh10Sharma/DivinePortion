@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-**Current phase:** Phase 5 complete — waiting for the owner's go-ahead for Phase 6.
+**Current phase:** Phase 6 complete — all six phases done. Remaining: the owner's on-device run of the iPhone QA checklist in README.md.
 
 Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs to a later phase
 
@@ -45,10 +45,13 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 - [x] Backup round-trip unit test (export → wipe → import → deep-equal, incl. photos)
 
 ### Phase 6 — Animation polish & iPhone QA
-- [ ] ANIM-1 … ANIM-12 complete and refined
-- [ ] Full re-audit of every requirement ID in this spec → all ✅ in `PROGRESS.md`
-- [ ] iPhone QA checklist (§10.3) written into `README.md`
-- [ ] Deployment + install instructions (§10.2) finalised in `README.md`
+- [x] ANIM-1 … ANIM-12 complete and refined
+- [x] Full re-audit of every requirement ID in this spec → all ✅ in `PROGRESS.md`
+- [x] iPhone QA checklist (§10.3) written into `README.md`
+- [x] Deployment + install instructions (§10.2) finalised in `README.md`
+
+### After Phase 6 — owner requests
+- [x] Dark gradient theme with a Dark / Light toggle, dark by default (Decision 47)
 
 ---
 
@@ -60,11 +63,11 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | IOS-2 | ✅ | Scroll containers pad top/bottom with `env(safe-area-inset-*)`, root pads left/right, tab bar pads bottom; a solid cream strip sits under the status bar so scrolled content never collides with it |
 | IOS-3 | ✅ | `assets/icon-source.svg` → `npm run icons` (sharp) → `public/apple-touch-icon.png` (180, flattened, no alpha), `pwa-192.png`, `pwa-512.png`, `pwa-maskable-512.png` (art in 80% safe zone), `favicon.svg` |
 | IOS-4 | ✅ | Both capable metas; manifest `display: standalone` |
-| IOS-5 | ✅ | Status bar `default`, `theme-color` `#F6F1E7`, title "Plate" |
+| IOS-5 | ✅ (adapted) | Light theme: status bar `default` + `theme-color` `#F6F1E7` exactly as specified. Dark theme (the owner-requested default, Decision 47): `black-translucent` (white status-bar text) + `theme-color` `#0F1A14`, chosen before first paint from the saved theme. Title "Plate" |
 | IOS-6 | ✅ | html/body locked (`overflow:hidden`, `overscroll-behavior:none`), each tab is its own `.scroll-area`. An open bottom sheet holds a UI lock; while it does, the screen behind gets `overflow-y: hidden`, and the sheet's own content area is `overscroll-behavior: contain` |
-| IOS-7 | ✅ | Global CSS: inputs/selects/textareas `font-size: max(16px, 1rem)` (no input overrides it). Every numeric input uses `inputMode="decimal"`; `NumberInput` accepts both `1.5` and `1,5` |
+| IOS-7 | ✅ | Global CSS: inputs/selects/textareas `font-size: max(16px, 1rem)`. Every numeric input uses `inputMode="decimal"`; `NumberInput` accepts both `1.5` and `1,5`. Phase 6 audit in Chrome at 360 / 390 / 430 px: every visible input on all tabs, the meal sheet (incl. the extra-item form), the free-slot sheet, and the meal and item editors is ≥ 16 px; no horizontal overflow anywhere |
 | IOS-8 | ✅ | Tap highlight off, `user-select: none` on chrome/buttons (inputs re-enabled), `touch-action: manipulation` on buttons |
-| IOS-9 | ✅ | Workbox precaches JS/CSS/HTML/SVG/PNG/woff2 (33 entries, about 1.1 MB). Verified: production preview reloads with full UI and fonts while offline |
+| IOS-9 | ✅ | Workbox precaches JS/CSS/HTML/SVG/PNG/woff2 (33 entries, about 1.3 MB). Re-verified on the final build: an offline reload shows the full poster with all fonts |
 | IOS-10 | ✅ | `navigator.storage.persist()` on launch (best effort); Settings shows "Storage: persistent / may be evicted" |
 | IOS-11 | ✅ | `registerType: 'autoUpdate'`; `src/lib/swUpdate.ts` defers the reload while any UI lock is open (the meal sheet holds one), and only reloads while the app is backgrounded or within 5s of launch |
 | HOME-1 | ✅ | Header, targets panel, timeline, totals bar, footer; rendered from today's DayLog snapshot |
@@ -76,7 +79,7 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | HOME-7 | ✅ | Meals-only line (2233 · 143 · 325 · 39 · 58) + "With snack: 2363 kcal" |
 | HOME-8 | ✅ | Three columns, gold hairlines, from `settings.footerItems` |
 | HOME-9 | ✅ | Eaten: photo `saturate(0.6)` plus a small green check that draws itself; ticked items get a check in the card. Next meal (first non-eaten with time ≥ now, else first non-eaten) gets a soft forest ring + glow. Re-evaluated every minute |
-| LOG-1 | ✅ | `ensureDayLog(localDateKey())` creates a deep-copied snapshot of plan + targets on the first open of the day (rw transaction). The date is re-checked every minute, at local midnight, and on `visibilitychange` → visible (`useNow`). Never uses `toISOString()` (unit-tested in IST) |
+| LOG-1 | ✅ | `ensureDayLog(localDateKey())` creates a deep-copied snapshot of plan + targets on the first open of the day (rw transaction). The date is re-checked every minute, at local midnight, and on `visibilitychange` → visible (`useNow`). Never uses `toISOString()` (unit-tested in IST). Phase 6: with the page clock set to 23:59:55 and the app open, a new day log appeared at 00:00 and the next-meal highlight moved to Meal 1 |
 | LOG-2 | ✅ | "Mark eaten" on each card ticks every item (incl. extras). The "Eaten" button opens an inline "Keep / Mark as not eaten" choice. Animation per ANIM-3 |
 | LOG-3 | ✅ | The meal sheet ticks/unticks each item, and has an "amount eaten" field per item (blank = planned; typing an amount ticks the item). Status none / partial / eaten is derived on every change |
 | LOG-4 | ✅ | "Add an extra item (today only)" in the sheet: name, amount, unit, kcal, optional P/C/F/fibre. Stored in `DayLog.extraItems`; the plan is untouched. Shown on the card as "+ name · today" |
@@ -113,19 +116,20 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | SET-7 | ✅ | About: storage persistence ("persistent / may be evicted") and app version |
 | NAV-1 | ✅ | Frosted cream glass (`-webkit-backdrop-filter` too), gold hairline, safe-area bottom, active tab forest + sliding indicator |
 | NAV-2 | ✅ | State-based tabs with optional `#history` / `#plan` / `#settings` hash (`replaceState`, no router) |
-| ANIM-1 | ✅ (basic) | Timeline line scaleY from top, cards fade + rise with 70ms stagger |
-| ANIM-2 | ✅ (basic) | `AnimatedNumber`: spring-driven motion value rendered rounded (header kcal/protein, totals bar, rings, Eaten/Planned table, sheet totals) |
-| ANIM-3 | ✅ (basic) | When a meal becomes eaten (from the card or the sheet): the check draws itself (pathLength), the card settles 1 → 0.975 → 1, and a green ripple expands from the timeline dot |
-| ANIM-4 | ✅ (basic) | `ProgressRing`: pathLength spring fill; colour changes via a CSS transition |
-| ANIM-5 | ✅ (basic) | The meal photo flies from the card into the sheet header and back (`layoutId`). A whole-card expand is left for the Phase 6 polish |
-| ANIM-6 | ✅ (basic) | Sheet springs up and the backdrop fades. Drag the handle/header down to dismiss (distance > 110px or velocity > 600px/s); dragging up past the top rubber-bands (elastic 0.05). Esc / backdrop tap closes |
-| ANIM-11 | ✅ | `<MotionConfig reducedMotion="user">` at the root; `AnimatedNumber` jumps and the settle is skipped under reduced motion. Verified with emulated reduced motion: no errors |
-| ANIM-7 | ✅ (basic) | dnd-kit sortable: neighbours slide out of the way with transform transitions; the lifted row scales 1.02 and casts a shadow; vertical axis only |
-| ANIM-8 | ✅ (basic) | Framer `drag="x"` with direction lock (vertical scroll still works); the red layer fades in by opacity; release animates the row away or springs it back |
-| ANIM-9 | ✅ | The blurred 24 px thumbnail shows at once (CSS blur, slightly scaled); the full image fades in over it (opacity) once loaded |
-| ANIM-10, ANIM-12 | ⏳ | Phase 6 (everything so far animates only transform / opacity / SVG stroke) |
+| ANIM-1 | ✅ | Timeline line draws top → bottom (scaleY from the top) while the cards fade + rise with a 70 ms stagger (spring) |
+| ANIM-2 | ✅ | `AnimatedNumber`: a spring-driven motion value rendered rounded, for the header kcal / protein, totals bar, ring centres, Eaten / Planned table and sheet totals. It updates the text node only (no React re-render per frame) |
+| ANIM-3 | ✅ | When a meal becomes eaten (from the card or the sheet): the check draws itself (pathLength), the card settles 1 → 0.975 → 1, and a green ripple expands from the timeline dot (scale + opacity). Triggered on the transition into "eaten" only |
+| ANIM-4 | ✅ | `ProgressRing`: pathLength spring fill; colour changes via a CSS transition |
+| ANIM-5 | ✅ | **Shared-element expand:** each card's background is a surface layer whose `layoutId` it shares with the sheet's surface, so the card grows into the sheet (position, size, corner radius) while the sheet content fades in. The meal photo flies into the sheet header (its own `layoutId`), and on close both morph back into the card. Checked frame by frame in Chrome (60 / 120 / 500 ms) |
+| ANIM-6 | ✅ | Drag the handle / header down to dismiss (distance > 110 px or velocity > 600 px/s). Dragging up past the top rubber-bands (elastic 0.05). The backdrop fades as the sheet is pulled down (dragY → opacity: 0.46 at 250 px), and fades in / out on open / close. Sheets without a card (plan editors) spring up from the bottom |
+| ANIM-7 | ✅ | dnd-kit sortable with handles: neighbours slide aside with transform transitions; the lifted row scales 1.02 with a shadow; vertical axis only |
+| ANIM-8 | ✅ | Framer `drag="x"` with direction lock (vertical scroll still works); the red "Delete" layer fades in by opacity; release animates the row away (then Undo toast) or springs it back |
+| ANIM-9 | ✅ | The blurred 24 px thumbnail shows at once; the full image fades in over it (opacity) once decoded |
+| ANIM-10 | ✅ | `useScroll({ container: Today's <main>, target: photo frame })` + `useTransform` → each meal photo drifts ±5 px (translateY, scaled 1.14 so the edges never show) inside its round frame while Today scrolls. Only on the live Today poster; off under reduced motion. Measured in Chrome: +0.3 px → −5 px across a 600 px scroll |
+| ANIM-11 | ✅ | `<MotionConfig reducedMotion="user">` drops transform / layout animations, leaving opacity fades. Non-transform motion is handled explicitly: ring fill and check drawing become instant / fade, numbers jump, the settle is skipped, parallax is off, the card → sheet morph becomes a plain fade. Verified with emulated `prefers-reduced-motion: reduce`: no transforms, no errors |
+| ANIM-12 | ✅ | Audit: every motion animation is transform, opacity or SVG stroke (pathLength). No animation of width / height / top / left; the only CSS transitions are one-off colour / shadow / filter / toggle-transform changes; no `will-change`; the only infinite animation is the small loading spinner. The crop preview is a downscaled ≤ 1600 px canvas moved by `translate3d` + `scale`. Real 60 fps needs the on-device check in the README checklist |
 
-Unit tests (Vitest, 80 passing):
+Phase 6 re-audit (all requirement IDs above re-checked; SPEC.md unchanged). Unit tests (Vitest, 80 passing):
 - `src/lib/nutrition.test.ts`: scaling, compatibility, eaten value, meal status, planned totals, display rounding.
 - `src/db/seed.test.ts`: §4.3 per-meal and day totals, seed only when empty.
 - `src/lib/dayLog.test.ts` (runs in IST): local date vs `toISOString` at 04:45, midnight rollover, deep-copy day creation, whole / partial meals (with and without a base), over-eating, extras, free slot entries and budget, §4.4 projections, next meal, final (History) day status.
@@ -185,3 +189,14 @@ Unit tests (Vitest, 80 passing):
 40. **Backup validation** checks everything the app relies on (and that the base64 photo data decodes); unknown extra fields are kept as they are.
 41. **The "Back up now" banner** switches to Settings and starts preparing the file; the owner then taps "Save backup file".
 42. **Version:** 0.5.0 for Phase 5.
+43. **ANIM-5 implementation:** the card's background is its own layer (`CardShell` surface) sharing a `layoutId` with the sheet's surface. While its sheet is open the card keeps its place in the timeline with the content faded out, so nothing jumps. Plan-editor sheets (no card to come from) still slide up from the bottom.
+44. **ANIM-10 scope:** parallax only on the live Today poster (not History, sheets or editors), ±5 px.
+45. **Under Reduce Motion** the card → sheet morph is replaced by a plain fade, and the ring fill and check drawing happen at once (MotionConfig alone would still animate pathLength, which isn't a transform).
+46. **Version:** 1.0.0 — all phases of SPEC.md are complete.
+47. **Dark theme (owner request after Phase 6, not in SPEC.md).** A Dark / Light toggle in Settings → Appearance; **dark is the default**.
+    - **Look:** a deep forest → near-black gradient with a soft green glow at the top and a faint gold glow bottom-right, the linen texture in light ink, and light-green accents.
+    - **How:** components only use the palette tokens, and `:root[data-theme='dark']` re-maps them. --cream becomes the dark background and --forest a light green, so "forest pill + cream text" turns into "light-green pill + dark text" and stays readable. Small extra tokens: field, rim, track, scrim, toast, glass. The crop screen is always dark. Light is the original cream poster, unchanged.
+    - **Storage:** the choice is stored in Settings (so backups carry it) and mirrored to localStorage. An inline script in `index.html` sets `data-theme` and the status-bar metas before first paint, so there's no flash.
+    - **Status bar:** this deviates from IOS-5 for dark only. A dark background needs white status-bar text, so dark uses `black-translucent`; light keeps `default`. iOS reads this meta when the installed app launches, so after switching theme the status bar follows on the next launch (noted in Settings). The manifest background / theme colour is now the dark background, so the launch splash is dark.
+    - **Frosted strip:** the strip under the status bar is now frosted glass (instead of solid cream), so it blends with both themes.
+    - **Version:** 1.1.0.

@@ -10,8 +10,14 @@
 
 /* ---------------------------------------------------------------------------
    Palette tokens (§6.1) — plain CSS variables, exposed to Tailwind below.
+   Two themes (owner request after Phase 6): `data-theme="dark"` (default, gradient) and
+   `data-theme="light"` (the original cream poster). Components only use the tokens, so the dark
+   theme re-maps them: --cream becomes the dark background and --forest a light green, which keeps
+   every "forest pill with cream text" readable (light-green pill, dark text).
    --------------------------------------------------------------------------- */
-:root {
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
   --cream: #f6f1e7;
   --sage: #e6efdf;
   --porcelain: #fffdf8;
@@ -22,12 +28,57 @@
   --terracotta: #c0623b;
   --gold: #c9a96e;
 
+  /* Semantic extras (both themes define them). */
+  --field: rgb(255 255 255 / 0.8); /* input background */
+  --rim: #e4daca; /* photo-frame ring */
+  --track: rgb(31 77 46 / 0.1); /* progress-ring track */
+  --scrim: rgb(42 36 32 / 0.38); /* backdrop behind sheets / dialogs */
+  --toast: #2a2420;
+  --toast-fg: #f6f1e7;
+  --toast-action: #9fd2a8;
+  --glass: rgb(246 241 231 / 0.78); /* frosted tab bar */
+  --app-gradient: none;
+  --deep-shadow: rgb(42 36 32 / 0.45);
+
   /* Soft layered card shadow: 3 stacked low-opacity shadows (§6.3). */
   --shadow-card:
     0 1px 1px rgb(42 36 32 / 0.04), 0 4px 10px -2px rgb(42 36 32 / 0.06), 0 14px 28px -12px rgb(31 77 46 / 0.12);
 
   /* Linen texture: tiny inline SVG noise + weave, ~4% opacity, no external image (§6.1). */
   --linen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.14 0 0 0 0 0.12 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.12'/%3E%3Cg stroke='%232a2420' stroke-opacity='0.045' stroke-width='0.5'%3E%3Cpath d='M0 0.5h160M0 4.5h160M0 8.5h160M0 12.5h160M0 16.5h160M0 20.5h160M0 24.5h160M0 28.5h160M0 32.5h160M0 36.5h160M0 40.5h160M0 44.5h160M0 48.5h160M0 52.5h160M0 56.5h160M0 60.5h160M0 64.5h160M0 68.5h160M0 72.5h160M0 76.5h160M0 80.5h160M0 84.5h160M0 88.5h160M0 92.5h160M0 96.5h160M0 100.5h160M0 104.5h160M0 108.5h160M0 112.5h160M0 116.5h160M0 120.5h160M0 124.5h160M0 128.5h160M0 132.5h160M0 136.5h160M0 140.5h160M0 144.5h160M0 148.5h160M0 152.5h160M0 156.5h160'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Dark theme (default): deep forest → near-black gradient with a soft green glow at the top. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --cream: #0f1a14; /* app background / text on accent */
+  --sage: #18271f; /* meal card surface */
+  --porcelain: #1d2a23; /* free-slot cards, sheets */
+  --forest: #8fca9e; /* accent: timeline, nodes, pills, totals bar, headings */
+  --olive: #a9b98a;
+  --espresso: #ece5d8; /* main text */
+  --warm-grey: #a39b90;
+  --terracotta: #e8875f;
+  --gold: #b99b62;
+
+  --field: rgb(255 255 255 / 0.06);
+  --rim: #33443a;
+  --track: rgb(143 202 158 / 0.14);
+  --scrim: rgb(0 0 0 / 0.55);
+  --toast: #ece5d8;
+  --toast-fg: #14201a;
+  --toast-action: #1f6b3a;
+  --glass: rgb(15 26 20 / 0.72);
+  --deep-shadow: rgb(0 0 0 / 0.6);
+  --app-gradient:
+    radial-gradient(120% 55% at 50% -8%, rgb(64 120 84 / 0.38) 0%, transparent 62%),
+    radial-gradient(90% 50% at 100% 100%, rgb(185 155 98 / 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, #11231a 0%, #0c1611 55%, #090f0c 100%);
+
+  --shadow-card: 0 1px 1px rgb(0 0 0 / 0.25), 0 6px 14px -4px rgb(0 0 0 / 0.35), 0 18px 32px -14px rgb(0 0 0 / 0.5);
+
+  /* Same linen weave, drawn in light ink so it reads on dark. */
+  --linen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.93 0 0 0 0 0.9 0 0 0 0 0.85 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.06'/%3E%3Cg stroke='%23ece5d8' stroke-opacity='0.025' stroke-width='0.5'%3E%3Cpath d='M0 0.5h160M0 4.5h160M0 8.5h160M0 12.5h160M0 16.5h160M0 20.5h160M0 24.5h160M0 28.5h160M0 32.5h160M0 36.5h160M0 40.5h160M0 44.5h160M0 48.5h160M0 52.5h160M0 56.5h160M0 60.5h160M0 64.5h160M0 68.5h160M0 72.5h160M0 76.5h160M0 80.5h160M0 84.5h160M0 88.5h160M0 92.5h160M0 96.5h160M0 100.5h160M0 104.5h160M0 108.5h160M0 112.5h160M0 116.5h160M0 120.5h160M0 124.5h160M0 128.5h160M0 132.5h160M0 136.5h160M0 140.5h160M0 144.5h160M0 148.5h160M0 152.5h160M0 156.5h160'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 @theme inline {
@@ -40,6 +91,13 @@
   --color-warm-grey: var(--warm-grey);
   --color-terracotta: var(--terracotta);
   --color-gold: var(--gold);
+  --color-field: var(--field);
+  --color-rim: var(--rim);
+  --color-track: var(--track);
+  --color-scrim: var(--scrim);
+  --color-toast: var(--toast);
+  --color-toast-fg: var(--toast-fg);
+  --color-toast-action: var(--toast-action);
 
   --font-serif: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
@@ -62,6 +120,11 @@
 
   html {
     background-color: var(--cream);
+    /* Dark theme gradient (several layers inside one variable) on its own element, so its layers
+       never pick up the linen's 160 px tile size. html is exactly the viewport (height: 100%). */
+    background-image: var(--app-gradient);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
@@ -70,7 +133,8 @@
     margin: 0;
     color: var(--espresso);
     font-family: var(--font-sans);
-    background-color: var(--cream);
+    /* Transparent so the html gradient shows through; the linen tiles on top of it. */
+    background-color: transparent;
     background-image: var(--linen);
     background-size: 160px 160px;
     -webkit-font-smoothing: antialiased;
@@ -128,7 +192,7 @@
 
   /* §3: backdrop-filter needs the -webkit- prefix on iOS. */
   .frosted {
-    background-color: rgb(246 241 231 / 0.78);
+    background-color: var(--glass);
     -webkit-backdrop-filter: saturate(1.4) blur(18px);
     backdrop-filter: saturate(1.4) blur(18px);
   }
