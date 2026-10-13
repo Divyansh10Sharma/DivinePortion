@@ -23,6 +23,13 @@ Other scripts:
 | `npm run lint` | ESLint |
 | `npm run icons` | Regenerates `public/*.png` icons from `assets/icon-source.svg` (only needed after editing the SVG) |
 
+## Using it (current features)
+- **Today** shows today's plan as a poster. Each day gets its own log (a copy of the plan), created the first time the app opens that day.
+- **Mark eaten** on a card logs the whole meal; tap **Eaten** again to undo.
+- **Tap a card** to open its sheet: tick single items, type the amount you actually ate, or add an extra item for today only.
+- **Free Slot → Log snack** records what you ate; the card shows the budget remaining or over.
+- The rings at the top track calories and the protein / fat / fibre minimums. Terracotta means over, or on course to fall short.
+
 ## Preview at iPhone size
 Chrome → F12 → Toggle device toolbar (**Ctrl+Shift+M**) → choose **iPhone 12 Pro** (390×844, same as the 13 Pro).
 DevTools doesn't emulate the notch, safe areas or standalone mode.
@@ -69,10 +76,11 @@ assets/            icon-source.svg (single icon source)
 scripts/           generate-icons.mjs
 public/            generated icons, favicon
 src/
-  db/              Dexie schema (db.ts), seed data (seed.ts)
-  lib/             types, nutrition math, formatting, storage persistence, SW update policy, UI locks
-  components/      poster/, timeline/, cards/, icons/, nav/
+  db/              Dexie schema (db.ts), seed data (seed.ts), day-log persistence (dayLogs.ts)
+  lib/             types, nutrition math, day-log logic (dayLog.ts), local dates, formatting,
+                   storage persistence, SW update policy, UI locks
+  components/      poster/, timeline/, cards/, rings/, sheets/, inputs/, anim/, icons/, nav/
   screens/         Today, Settings, placeholders
-  hooks/           useActiveTab
+  hooks/           useActiveTab, useToday (local date + rollover), useLogActions
   styles/          index.css (Tailwind v4, palette tokens, linen texture, iOS shell rules)
 ```

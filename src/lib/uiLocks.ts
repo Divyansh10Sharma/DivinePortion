@@ -1,8 +1,8 @@
 // Tracks whether any bottom sheet / editor is open. Used by:
 // - swUpdate.ts (IOS-11): never reload for a service-worker update while something is being edited.
-// - Sheets (IOS-6): lock background scroll while open.
+// - App (IOS-6): the screen behind an open sheet stops scrolling.
 
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 let openCount = 0;
 const listeners = new Set<() => void>();
@@ -31,4 +31,9 @@ function acquire(): () => void {
 /** Holds a UI lock while `active` is true (e.g. while a sheet is mounted/open). */
 export function useUiLock(active: boolean): void {
   useEffect(() => (active ? acquire() : undefined), [active]);
+}
+
+/** True while any sheet/editor holds a lock. */
+export function useUiLocked(): boolean {
+  return useSyncExternalStore(onUiLocksChange, hasOpenUiLocks, () => false);
 }

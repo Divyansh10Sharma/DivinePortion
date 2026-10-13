@@ -1,10 +1,11 @@
 import { motion } from 'motion/react';
-import { fmt } from '../../lib/nutrition';
+import { AnimatedNumber } from '../anim/AnimatedNumber';
 import { LeafFlourish } from '../icons/LeafFlourish';
 
 /**
  * HOME-2 / HOME-3: "{N} kcal {plan title}" with leaf flourishes, then the pill strip.
- * N includes free-slot budgets; P is protein from meal items. Both are computed live by the caller.
+ * N includes free-slot budgets; P is protein from meal items. Both are computed live by the caller
+ * and count smoothly to new values (ANIM-2).
  */
 export function PosterHeader({ kcal, protein, title }: { kcal: number; protein: number; title: string }) {
   return (
@@ -17,7 +18,7 @@ export function PosterHeader({ kcal, protein, title }: { kcal: number; protein: 
       <div className="flex items-center justify-center gap-2">
         <LeafFlourish className="shrink-0" />
         <h1 className="font-serif text-[30px] leading-[1.1] font-bold text-forest">
-          <span className="tabular">{fmt(kcal)}</span> kcal
+          <AnimatedNumber value={kcal} /> kcal
           <span className="block text-[26px] font-semibold text-espresso italic">{title}</span>
         </h1>
         <LeafFlourish flip className="shrink-0" />
@@ -29,7 +30,7 @@ export function PosterHeader({ kcal, protein, title }: { kcal: number; protein: 
         <span>Pure Vegetarian</span>
         <span className="font-bold text-gold">·</span>
         <span className="tabular">
-          {fmt(protein)}
+          <AnimatedNumber value={protein} />
           <span className="normal-case">g</span> Protein
         </span>
       </div>

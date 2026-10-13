@@ -4,6 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedIfEmpty } from './db/db';
 import { requestPersistentStorage } from './lib/storage';
 import { useActiveTab, TABS, type Tab } from './hooks/useActiveTab';
+import { useToday } from './hooks/useToday';
+import { useUiLocked } from './lib/uiLocks';
 import { TabBar, TAB_BAR_HEIGHT } from './components/nav/TabBar';
 import { TodayScreen } from './screens/TodayScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -30,11 +32,15 @@ export default function App() {
   const [tab, setTab] = useActiveTab();
   const plan = useLiveQuery(() => (ready ? db.plan.get('active') : undefined), [ready]);
   const settings = useLiveQuery(() => (ready ? db.settings.get('settings') : undefined), [ready]);
+  const today = useToday(ready);
+  const locked = useUiLocked();
 
   function renderScreen(t: Tab) {
     switch (t) {
       case 'today':
-        return plan && settings ? <TodayScreen plan={plan} settings={settings} /> : null;
+        return plan && settings && today.log ? (
+          <TodayScreen plan={plan} settings={settings} log={today.log} date={today.date} now={today.now} />
+        ) : null;
       case 'history':
         return (
           <ScreenShell title="History">
@@ -73,6 +79,8 @@ export default function App() {
             hidden={t !== tab}
             className="scroll-area absolute inset-0"
             style={{
+              // IOS-6: while a bottom sheet is open the screen behind it must not scroll.
+              overflowY: locked ? 'hidden' : undefined,
               paddingTop: 'env(safe-area-inset-top)',
               paddingBottom: `calc(${TAB_BAR_HEIGHT + 24}px + env(safe-area-inset-bottom))`,
             }}
