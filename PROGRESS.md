@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-**Current phase:** Phase 2 complete — waiting for the owner's go-ahead for Phase 3.
+**Current phase:** Phase 3 complete — waiting for the owner's go-ahead for Phase 4.
 
 Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs to a later phase
 
@@ -28,11 +28,11 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 - [x] Basic ANIM-2, ANIM-3, ANIM-4
 
 ### Phase 3 — Plan editor, smart scaling, reordering
-- [ ] PLAN-1 … PLAN-10
-- [ ] Undo toast system
-- [ ] HIST-3 snapshot immutability unit test (edit plan → past logs unchanged)
-- [ ] PLAN-9 today-merge logic unit-tested
-- [ ] Basic ANIM-7, ANIM-8
+- [x] PLAN-1 … PLAN-10
+- [x] Undo toast system
+- [x] HIST-3 snapshot immutability unit test (edit plan → past logs unchanged)
+- [x] PLAN-9 today-merge logic unit-tested
+- [x] Basic ANIM-7, ANIM-8
 
 ### Phase 4 — Photos
 - [ ] PHOTO-1 … PHOTO-6 (meals, items, free-slot entries)
@@ -84,8 +84,18 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | LOG-7 | ✅ | Four rings (Calories of 2363, Protein / Fat / Fibre minimums) with the §4.4 colours and a check when met, plus a one-line text warning so colour isn't the only signal. Uses `DayLog.targetsSnapshot` |
 | LOG-8 | ⏳ | Phase 5 (Settings) |
 | §4.4 | ✅ (today) | kcal terracotta when eaten > target. Minimums are projected (eaten + unticked planned items of non-free-slot meals): terracotta if short, forest + check once met, olive in between. Seed day starts with fat "on course for 39g" as intended. The History part comes in Phase 5 |
-| HIST-1 … HIST-3 | ⏳ | Phase 3 / 5 |
-| PLAN-1 … PLAN-10 | ⏳ | Phase 3. PLAN-3's icon registry (10 icons incl. apple/bowl/cup/sparkle) already exists in `src/components/icons/registry.ts` |
+| HIST-1, HIST-2 | ⏳ | Phase 5 |
+| HIST-3 | ✅ | `ensureDayLog` never rewrites an existing log; plan writes only touch today's log (`updatePlan` / `applyPlanToToday`). Unit-tested in `src/db/plan.test.ts`: several plan edits, a silent sync and a merge leave yesterday's log deep-equal to before |
+| PLAN-1 | ✅ | Plan tab: add meal, delete (swipe left or "Delete meal" in the editor; Undo toast), rename (editor), reorder by dragging the ⋮⋮ grip (dnd-kit; drag starts only from the handle, so scrolling and swiping elsewhere still work). Verified in headless Chrome |
+| PLAN-2 | ⚠️ | Time (iOS time wheel, validated `HH:MM`), name, icon, badge and note are all editable. **The meal photo comes in Phase 4** (the PHOTO checklist) |
+| PLAN-3 | ✅ | 10 icons (sunrise, sun, star, coffee, leaf, moon, apple, bowl, cup, sparkle) as forest circles with cream lucide glyphs; the selected one gets a gold ring |
+| PLAN-4 | ✅ | "Free slot" toggle with editable kcal budget and hint. Items are kept (hidden) while a meal is a free slot, so toggling back loses nothing |
+| PLAN-5 | ✅ | Meal editor: add item, delete (swipe left or "Delete item"; Undo toast), reorder by drag handle, tap to open the item editor |
+| PLAN-6 | ⚠️ | Name, amount, unit (known units offered as suggestions, any free text allowed), kcal / P / C / F / fibre, note. **The item photo comes in Phase 4** |
+| PLAN-7 | ✅ | Base per 100 g / 100 ml / piece: add (pre-filled from the current values), edit, remove. Badge shows "Auto from base" or "Manual". Editing the amount recalculates from a compatible base; typing a value makes the item manual; "Recalculate from base" goes back. An incompatible unit shows a terracotta warning and keeps manual values. Unit-tested, and checked in the browser (Peanut Butter 20 g → 127.8 kcal) |
+| PLAN-8 | ✅ | Swipe left reveals red "Delete"; swipe further (or flick) deletes. Every meal / item delete shows a 5s "Undo" toast that re-inserts at the original position. Undo is also offered when removing today's extras and free-slot entries |
+| PLAN-9 | ✅ | Each plan write runs in one transaction with today's log. With no logging activity, today is re-snapshotted silently; otherwise a pending flag is set, and leaving the Plan tab asks "Apply these plan changes to today too?". Yes merges, keeping eaten state for surviving meal/item IDs; No keeps today. Unit-tested (`planMerge.test.ts`, `plan.test.ts`) and checked end-to-end in the browser |
+| PLAN-10 | ✅ | Plan title is inline-editable at the top of the Plan tab; the Today header shows "{computed kcal} kcal {title}" (a preview line under the title shows exactly that) |
 | PHOTO-1 … PHOTO-4, PHOTO-6 | ⏳ | Phase 4 |
 | PHOTO-5 | ✅ | `PlatePlaceholder` SVG: porcelain plate (rim, inner shadow, gold line) on linen |
 | SET-1 … SET-6 | ⏳ | Phase 5 |
@@ -99,14 +109,19 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | ANIM-5 | ✅ (basic) | The meal photo flies from the card into the sheet header and back (`layoutId`). A whole-card expand is left for the Phase 6 polish |
 | ANIM-6 | ✅ (basic) | Sheet springs up and the backdrop fades. Drag the handle/header down to dismiss (distance > 110px or velocity > 600px/s); dragging up past the top rubber-bands (elastic 0.05). Esc / backdrop tap closes |
 | ANIM-11 | ✅ | `<MotionConfig reducedMotion="user">` at the root; `AnimatedNumber` jumps and the settle is skipped under reduced motion. Verified with emulated reduced motion: no errors |
-| ANIM-7 … ANIM-10, ANIM-12 | ⏳ | Phases 3–6 (everything so far animates only transform / opacity / SVG stroke) |
+| ANIM-7 | ✅ (basic) | dnd-kit sortable: neighbours slide out of the way with transform transitions; the lifted row scales 1.02 and casts a shadow; vertical axis only |
+| ANIM-8 | ✅ (basic) | Framer `drag="x"` with direction lock (vertical scroll still works); the red layer fades in by opacity; release animates the row away or springs it back |
+| ANIM-9, ANIM-10, ANIM-12 | ⏳ | Phases 4–6 (everything so far animates only transform / opacity / SVG stroke) |
 
-Unit tests (Vitest, 46 passing):
+Unit tests (Vitest, 63 passing):
 - `src/lib/nutrition.test.ts`: scaling, compatibility, eaten value, meal status, planned totals, display rounding.
 - `src/db/seed.test.ts`: §4.3 per-meal and day totals, seed only when empty.
 - `src/lib/dayLog.test.ts` (runs in IST): local date vs `toISOString` at 04:45, midnight rollover, deep-copy day creation, whole / partial meals (with and without a base), over-eating, extras, free slot entries and budget, §4.4 projections, next meal.
 - `src/db/dayLogs.test.ts`: create once, later plan changes don't leak into an existing day, the next day snapshots the new plan.
 - `src/lib/format.test.ts`: decimal parsing (`1,5` / `1.5`), display rounding.
+- `src/lib/planEdit.test.ts`: smart scaling (amount → base, manual switch, recalculate, incompatible unit, add/edit/remove base, per-piece), move/remove/insert-at (undo), free-slot toggle, time validation.
+- `src/lib/planMerge.test.ts`: PLAN-9 silent sync vs ask; merge keeps surviving eaten state / extras / free-slot entries and drops deleted ones; free-slot flips.
+- `src/db/plan.test.ts`: **HIST-3** (past log unchanged after edits, sync and merge), PLAN-9 end-to-end in IndexedDB, plan writes bump `updatedAt`.
 
 ---
 
@@ -132,3 +147,11 @@ Unit tests (Vitest, 46 passing):
 18. **Day rollover:** besides launch and `visibilitychange`, a timer fires at local midnight (plus a one-minute clock for the next-meal highlight), for when the app is left open and visible across midnight.
 19. **Sheet dragging:** only the handle/header area starts a drag, so the item list scrolls normally (same idea as §11.9 for reordering).
 20. **Version:** `package.json` version bumped to 0.2.0 for Phase 2 (shown in Settings → Version).
+21. **When the PLAN-9 prompt appears:** plan edits save on every change. If today has logging activity, the owner is asked **once, when leaving the Plan tab** (not on every keystroke), and only if today's snapshot really differs from the plan. If the app is closed before leaving the tab, today stays as it was (same as "No").
+22. **Meal order is manual.** The timeline follows the drag order (`order`); editing a meal's time does not re-sort it.
+23. **New meals** start as "New meal" with the "sun" icon, at the last meal's time, so they can be dragged into place. **New items** start as "New item", 1 serving, 0 kcal, manual.
+24. **Adding a base pre-fills it** from the item's current values and amount (e.g. Curd 200 g · 120 kcal → 60 kcal per 100 g). Adding a base never changes typed values by itself.
+25. **Free slot toggle keeps items:** turning a meal into a free slot hides its items instead of deleting them, and gives a default budget of 100 kcal if none was set.
+26. **Undo toasts:** one at a time (a new one replaces the old), 5s, shown above the tab bar and above sheets. Undo re-inserts the deleted meal/item at its old position.
+27. **Editors save via updaters:** sheets pass functions that are applied to the freshly stored meal/item inside the save transaction, so quick edits across fields can't overwrite each other.
+28. **Version:** 0.3.0 for Phase 3.

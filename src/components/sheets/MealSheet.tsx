@@ -12,6 +12,7 @@ import { MealPhoto } from '../cards/MealPhoto';
 import { NumberInput } from '../inputs/NumberInput';
 import { QuickItemForm } from '../inputs/QuickItemForm';
 import { BottomSheet } from './BottomSheet';
+import { showUndo } from '../toast/toastStore';
 
 const STATUS_LABEL = { none: 'Not eaten yet', partial: 'Partly eaten', eaten: 'Eaten' } as const;
 
@@ -109,7 +110,10 @@ function MealBody({ meal, log, actions }: { meal: Meal; log: DayLog; actions: Lo
             override={itemOverrides[item.id]}
             onToggle={(v) => actions.setItemEaten(meal.id, item.id, v)}
             onAmount={(a) => actions.setItemAmount(meal.id, item.id, a)}
-            onRemove={() => actions.removeExtra(meal.id, item.id)}
+            onRemove={() => {
+              actions.removeExtra(meal.id, item.id);
+              showUndo(`“${item.name}” removed`, () => actions.restoreExtra(meal.id, item));
+            }}
           />
         ))}
       </ul>
@@ -224,7 +228,10 @@ function FreeSlotBody({ meal, log, actions }: { meal: Meal; log: DayLog; actions
                 <p className="text-[14px] text-espresso">{e.name}</p>
                 <p className="text-[11px] text-warm-grey tabular">{macroText(e)}</p>
               </div>
-              <button aria-label={`Remove ${e.name}`} onClick={() => actions.removeEntry(meal.id, e.id)} className="p-1 text-warm-grey active:text-terracotta">
+              <button aria-label={`Remove ${e.name}`} onClick={() => {
+                  actions.removeEntry(meal.id, e.id);
+                  showUndo(`“${e.name}” removed`, () => actions.restoreEntry(meal.id, e));
+                }} className="p-1 text-warm-grey active:text-terracotta">
                 <X size={16} />
               </button>
             </li>

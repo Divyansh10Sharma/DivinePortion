@@ -8,7 +8,12 @@ import { useToday } from './hooks/useToday';
 import { useUiLocked } from './lib/uiLocks';
 import { TabBar, TAB_BAR_HEIGHT } from './components/nav/TabBar';
 import { TodayScreen } from './screens/TodayScreen';
+import { PlanScreen } from './screens/PlanScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { applyPlanToToday, todayDiffersFromPlan } from './db/plan';
+import { setPlanChangePending, usePlanChangePending } from './hooks/planSync';
+import { Toaster } from './components/toast/Toaster';
+import { ConfirmDialog } from './components/dialog/ConfirmDialog';
 import { ComingSoon, ScreenShell } from './screens/PlaceholderScreen';
 
 /** First-launch work: seed the DB if empty (§5) and request persistent storage (IOS-10). */
@@ -34,6 +39,23 @@ export default function App() {
   const settings = useLiveQuery(() => (ready ? db.settings.get('settings') : undefined), [ready]);
   const today = useToday(ready);
   const locked = useUiLocked();
+  const planChangePending = usePlanChangePending();
+  const [askApplyToToday, setAskApplyToToday] = useState(false);
+
+  // PLAN-9: when leaving the Plan tab after edits that couldn't be synced silently (today already
+  // has logging activity), ask whether to apply them to today. Skip if today already matches.
+  function changeTab(next: Tab) {
+    if (tab === 'plan' && next !== 'plan' && planChangePending) {
+      void todayDiffersFromPlan().then((differs) => (differs ? setAskApplyToToday(true) : setPlanChangePending(false)));
+    }
+    setTab(next);
+  }
+
+  function answerApplyToToday(apply: boolean) {
+    setAskApplyToToday(false);
+    setPlanChangePending(false);
+    if (apply) void applyPlanToToday();
+  }
 
   function renderScreen(t: Tab) {
     switch (t) {
@@ -48,11 +70,7 @@ export default function App() {
           </ScreenShell>
         );
       case 'plan':
-        return (
-          <ScreenShell title="Plan">
-            <ComingSoon phase={3} what="the plan editor" />
-          </ScreenShell>
-        );
+        return plan ? <PlanScreen plan={plan} /> : null;
       case 'settings':
         return <SettingsScreen />;
     }
@@ -89,8 +107,19 @@ export default function App() {
           </main>
         ))}
 
-        <TabBar active={tab} onChange={setTab} />
+        <TabBar active={tab} onChange={changeTab} />
       </div>
+
+      <Toaster />
+      <ConfirmDialog
+        open={askApplyToToday}
+        title="Apply these plan changes to today too?"
+        message="You've already logged meals today. Yes updates today and keeps what you've marked eaten; No leaves today as it is (the changes start tomorrow)."
+        confirmLabel="Yes, apply"
+        cancelLabel="No"
+        onConfirm={() => answerApplyToToday(true)}
+        onCancel={() => answerApplyToToday(false)}
+      />
     </MotionConfig>
   );
 }

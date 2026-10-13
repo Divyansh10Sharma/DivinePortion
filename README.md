@@ -29,6 +29,10 @@ Other scripts:
 - **Tap a card** to open its sheet: tick single items, type the amount you actually ate, or add an extra item for today only.
 - **Free Slot → Log snack** records what you ate; the card shows the budget remaining or over.
 - The rings at the top track calories and the protein / fat / fibre minimums. Terracotta means over, or on course to fall short.
+- **Plan** tab: edit the plan title, then tap a meal to change its name, time, icon, badge, note and free-slot budget, and its items.
+  - Drag **⋮⋮** to reorder meals and items; swipe left to delete (an Undo toast appears for 5 seconds).
+  - In an item, add a **base** (per 100 g / 100 ml / piece). Changing the amount then recalculates the values; typing a value makes them manual, and **Recalculate from base** switches back.
+  - Changes apply from today onward. If you've already logged something today, leaving the Plan tab asks whether to apply them to today too. Past days never change.
 
 ## Preview at iPhone size
 Chrome → F12 → Toggle device toolbar (**Ctrl+Shift+M**) → choose **iPhone 12 Pro** (390×844, same as the 13 Pro).
@@ -76,11 +80,13 @@ assets/            icon-source.svg (single icon source)
 scripts/           generate-icons.mjs
 public/            generated icons, favicon
 src/
-  db/              Dexie schema (db.ts), seed data (seed.ts), day-log persistence (dayLogs.ts)
-  lib/             types, nutrition math, day-log logic (dayLog.ts), local dates, formatting,
+  db/              Dexie schema (db.ts), seed data (seed.ts), day logs (dayLogs.ts), plan writes (plan.ts)
+  lib/             types, nutrition math, day-log logic (dayLog.ts), plan editing (planEdit.ts),
+                   PLAN-9 merge (planMerge.ts), local dates, formatting,
                    storage persistence, SW update policy, UI locks
-  components/      poster/, timeline/, cards/, rings/, sheets/, inputs/, anim/, icons/, nav/
-  screens/         Today, Settings, placeholders
-  hooks/           useActiveTab, useToday (local date + rollover), useLogActions
+  components/      poster/, timeline/, cards/, rings/, sheets/, inputs/, anim/, icons/, nav/,
+                   plan/ (meal & item editors), dnd/ (sortable, swipe-to-delete), toast/, dialog/
+  screens/         Today, Plan, Settings, placeholders
+  hooks/           useActiveTab, useToday (local date + rollover), useLogActions, planSync (PLAN-9 prompt state)
   styles/          index.css (Tailwind v4, palette tokens, linen texture, iOS shell rules)
 ```

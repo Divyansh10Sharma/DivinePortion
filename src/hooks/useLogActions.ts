@@ -12,6 +12,7 @@ import {
   setItemEaten,
 } from '../lib/dayLog';
 import { newId } from '../lib/ids';
+import type { Item } from '../lib/types';
 import type { QuickItemValues } from '../components/inputs/QuickItemForm';
 
 export interface LogActions {
@@ -23,6 +24,9 @@ export interface LogActions {
   removeExtra(mealId: string, itemId: string): void;
   addEntry(mealId: string, values: QuickItemValues): void;
   removeEntry(mealId: string, entryId: string): void;
+  /** Undo helpers: put a removed extra / entry back exactly as it was. */
+  restoreExtra(mealId: string, item: Item): void;
+  restoreEntry(mealId: string, entry: Item): void;
 }
 
 /** Binds the pure dayLog.ts mutations to the stored log for `date`. */
@@ -38,6 +42,8 @@ export function useLogActions(date: string): LogActions {
       removeExtra: (m, i) => run((log) => removeExtraItem(log, m, i)),
       addEntry: (m, v) => run((log) => addFreeSlotEntry(log, m, makeLoggedItem(newId(), v))),
       removeEntry: (m, e) => run((log) => removeFreeSlotEntry(log, m, e)),
+      restoreExtra: (m, item) => run((log) => addExtraItem(log, m, item)),
+      restoreEntry: (m, entry) => run((log) => addFreeSlotEntry(log, m, entry)),
     } satisfies LogActions;
   }, [date]);
 }
