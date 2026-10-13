@@ -17,6 +17,7 @@ import { BottomSheet } from '../sheets/BottomSheet';
 import { NumberInput } from '../inputs/NumberInput';
 import { TextInput } from '../inputs/TextInput';
 import { Field, SectionTitle } from './Field';
+import { PhotoPicker } from '../photos/PhotoPicker';
 
 const LABEL: Record<NutrientKey, string> = { kcal: 'kcal', protein: 'Protein g', carbs: 'Carbs g', fat: 'Fat g', fibre: 'Fibre g' };
 const PERS: { per: BasePer; label: string }[] = [
@@ -29,7 +30,6 @@ const BASE_UNIT: Record<BasePer, string> = { '100g': 'g', '100ml': 'ml', '1piece
 /**
  * Item editor (PLAN-5, PLAN-6, PLAN-7). Every change is saved immediately via `onChange`
  * (the pure helpers in planEdit.ts implement the smart-scaling rules).
- * Photo upload arrives in Phase 4.
  */
 export function ItemEditorSheet({
   item,
@@ -69,6 +69,14 @@ function ItemForm({ item, onChange, onDelete }: { item: Item; onChange: (update:
 
   return (
     <div className="space-y-3.5 pt-1">
+      <div>
+        <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.12em] text-olive uppercase">Photo</span>
+        <PhotoPicker
+          photoId={item.photoId}
+          label="item photo"
+          onChange={(photoId) => onChange((i) => (photoId ? { ...i, photoId } : omitKey(i, 'photoId')))}
+        />
+      </div>
       <Field label="Name">
         <TextInput value={item.name} onCommit={(name) => onChange((i) => ({ ...i, name }))} />
       </Field>

@@ -1,14 +1,24 @@
 import { motion } from 'motion/react';
 import { DrawnCheck } from '../anim/DrawnCheck';
-import { PlatePlaceholder } from './PlatePlaceholder';
+import { PhotoView } from '../photos/PhotoView';
 
 /**
  * White circular "plate" frame with a subtle rim (§6.3).
- * Phase 4 adds real photos; until then (and for meals without one) the porcelain placeholder shows.
+ * Shows the meal's photo (PHOTO-1…4), or the porcelain placeholder when there is none (PHOTO-5).
  * - `layoutId` lets the photo fly between the card and the detail sheet (ANIM-5, basic).
  * - `eaten` (HOME-9): slightly desaturated + a small green check that draws itself.
  */
-export function MealPhoto({ size = 64, layoutId, eaten = false }: { size?: number; layoutId?: string; eaten?: boolean }) {
+export function MealPhoto({
+  photoId,
+  size = 64,
+  layoutId,
+  eaten = false,
+}: {
+  photoId?: string | undefined;
+  size?: number;
+  layoutId?: string;
+  eaten?: boolean;
+}) {
   return (
     <motion.div layoutId={layoutId} className="relative shrink-0" style={{ width: size, height: size }}>
       <div
@@ -16,7 +26,7 @@ export function MealPhoto({ size = 64, layoutId, eaten = false }: { size?: numbe
         style={{ filter: eaten ? 'saturate(0.6)' : undefined }}
       >
         <div className="h-full w-full overflow-hidden rounded-full">
-          <PlatePlaceholder size={size - 6} />
+          <PhotoView photoId={photoId} size={size - 6} />
         </div>
       </div>
       {eaten && (

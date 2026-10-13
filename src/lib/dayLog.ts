@@ -266,9 +266,9 @@ export function removeFreeSlotEntry(log: DayLog, mealId: string, entryId: string
 /** Build a manual (no base) item from a quick-entry form (extras / free-slot entries). */
 export function makeLoggedItem(
   id: string,
-  fields: { name: string; amount?: number; unit?: string } & Partial<Nutrition> & { kcal: number },
+  fields: { name: string; amount?: number; unit?: string; photoId?: string } & Partial<Nutrition> & { kcal: number },
 ): Item {
-  return {
+  const item: Item = {
     kcal: fields.kcal,
     protein: fields.protein ?? 0,
     carbs: fields.carbs ?? 0,
@@ -281,4 +281,6 @@ export function makeLoggedItem(
     unit: fields.unit?.trim() || 'serving',
     valuesSource: 'manual',
   };
+  if (fields.photoId) item.photoId = fields.photoId;
+  return item;
 }

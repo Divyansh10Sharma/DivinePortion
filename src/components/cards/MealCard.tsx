@@ -107,7 +107,7 @@ export function MealCard({
         {selected ? (
           <div style={{ width: 60, height: 60 }} className="shrink-0" />
         ) : (
-          <MealPhoto size={60} layoutId={`photo-${meal.id}`} eaten={status === 'eaten'} />
+          <MealPhoto photoId={meal.photoId} size={60} layoutId={`photo-${meal.id}`} eaten={status === 'eaten'} />
         )}
         <div className="min-w-0 flex-1">
           <div className="flex justify-end">

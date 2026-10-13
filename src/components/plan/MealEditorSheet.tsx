@@ -10,11 +10,12 @@ import { DragHandle, SortableList, SortableRow } from '../dnd/Sortable';
 import { SwipeToDelete } from '../dnd/SwipeToDelete';
 import { Field, SectionTitle, Toggle } from './Field';
 import { IconPicker } from './IconPicker';
+import { PhotoPicker } from '../photos/PhotoPicker';
+import { ItemThumb } from '../photos/ItemThumb';
 
 /**
  * Meal editor (PLAN-2, PLAN-4, PLAN-5). Changes save immediately through `onChange`.
  * Items: drag the grip to reorder, swipe left to delete (Undo toast), tap to edit.
- * Meal photo upload arrives in Phase 4.
  */
 export function MealEditorSheet({
   meal,
@@ -82,6 +83,14 @@ function MealForm({
 
   return (
     <div className="space-y-3.5 pt-1">
+      <div>
+        <span className="mb-1.5 block text-[11px] font-semibold tracking-[0.12em] text-olive uppercase">Photo</span>
+        <PhotoPicker
+          photoId={meal.photoId}
+          label="meal photo"
+          onChange={(photoId) => onChange((m) => (photoId ? { ...m, photoId } : omitKey(m, 'photoId')))}
+        />
+      </div>
       <div className="grid grid-cols-[1fr_auto] gap-3">
         <Field label="Name">
           <TextInput value={meal.name} onCommit={(name) => onChange((m) => ({ ...m, name }))} />
@@ -156,7 +165,8 @@ function MealForm({
                       <SwipeToDelete label={item.name} onDelete={() => onDeleteItem(item.id)} className="rounded-2xl" surfaceClass="bg-sage">
                         <div className="flex items-center gap-1 py-1.5 pr-2 pl-2">
                           <DragHandle label={item.name} {...handle} />
-                          <button onClick={() => onEditItem(item.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                          <button onClick={() => onEditItem(item.id)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+                            <ItemThumb photoId={item.photoId} />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-[14px] text-espresso">{item.name}</span>
                               <span className="block text-[11px] text-warm-grey tabular">

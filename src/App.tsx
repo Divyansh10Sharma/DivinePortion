@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedIfEmpty } from './db/db';
+import { deleteOrphanPhotos } from './db/photos';
 import { requestPersistentStorage } from './lib/storage';
 import { useActiveTab, TABS, type Tab } from './hooks/useActiveTab';
 import { useToday } from './hooks/useToday';
@@ -16,13 +17,17 @@ import { Toaster } from './components/toast/Toaster';
 import { ConfirmDialog } from './components/dialog/ConfirmDialog';
 import { ComingSoon, ScreenShell } from './screens/PlaceholderScreen';
 
-/** First-launch work: seed the DB if empty (§5) and request persistent storage (IOS-10). */
+/** Launch work: seed the DB if empty (§5), request persistent storage (IOS-10), clean up orphan photos (PHOTO-6). */
 function useBootstrap(): { ready: boolean; error: string | null } {
   const [state, setState] = useState<{ ready: boolean; error: string | null }>({ ready: false, error: null });
   useEffect(() => {
     let alive = true;
     seedIfEmpty()
-      .then(() => alive && setState({ ready: true, error: null }))
+      .then(() => {
+        if (alive) setState({ ready: true, error: null });
+        // PHOTO-6: remove photos nothing references any more (never ones used by past days).
+        void deleteOrphanPhotos().catch(() => {});
+      })
       .catch((e: unknown) => alive && setState({ ready: false, error: String(e) }));
     void requestPersistentStorage();
     return () => {

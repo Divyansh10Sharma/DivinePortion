@@ -2,11 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { parseDecimal } from '../../lib/format';
 import type { Nutrition } from '../../lib/types';
+import { PhotoPicker } from '../photos/PhotoPicker';
 
 export interface QuickItemValues extends Nutrition {
   name: string;
   amount?: number;
   unit?: string;
+  photoId?: string;
 }
 
 type Field = 'name' | 'amount' | 'unit' | 'kcal' | 'protein' | 'carbs' | 'fat' | 'fibre';
@@ -24,7 +26,7 @@ const inputClass =
 
 /**
  * Quick entry for today-only extras (LOG-4, with amount + unit) and free-slot entries
- * (LOG-5, name + kcal + optional macros). Name and kcal are required; macros default to 0.
+ * (LOG-5, name + kcal + optional macros + optional photo). Name and kcal are required; macros default to 0.
  */
 export function QuickItemForm({
   withAmount,
@@ -37,6 +39,7 @@ export function QuickItemForm({
 }) {
   const [f, setF] = useState(EMPTY);
   const [touched, setTouched] = useState(false);
+  const [photoId, setPhotoId] = useState<string | undefined>(undefined);
 
   const set = (k: Field) => (e: { target: { value: string } }) => setF((prev) => ({ ...prev, [k]: e.target.value }));
   const num = (k: Field) => parseDecimal(f[k]);
@@ -64,8 +67,10 @@ export function QuickItemForm({
       values.amount = num('amount') ?? 1;
       values.unit = f.unit.trim() || 'serving';
     }
+    if (photoId) values.photoId = photoId;
     onSubmit(values);
     setF(EMPTY);
+    setPhotoId(undefined);
     setTouched(false);
   }
 
@@ -92,6 +97,7 @@ export function QuickItemForm({
           <input key={key} className={inputClass} placeholder={label} inputMode="decimal" value={f[key]} onChange={set(key)} />
         ))}
       </div>
+      <PhotoPicker photoId={photoId} onChange={setPhotoId} size={52} label="photo (optional)" />
       <datalist id="plate-units">
         {['g', 'ml', 'piece', 'sachet', 'scoop', 'pinch', 'serving'].map((u) => (
           <option key={u} value={u} />

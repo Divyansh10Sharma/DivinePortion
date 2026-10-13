@@ -40,7 +40,7 @@ export function FreeSlotCard({
         {selected ? (
           <div style={{ width: 60, height: 60 }} className="shrink-0" />
         ) : (
-          <MealPhoto size={60} layoutId={`photo-${meal.id}`} eaten={logged} />
+          <MealPhoto photoId={meal.photoId} size={60} layoutId={`photo-${meal.id}`} eaten={logged} />
         )}
         <div className="min-w-0 flex-1 pt-0.5">
           <h3 className="font-serif text-[17px] leading-snug font-semibold text-espresso">{meal.name}</h3>

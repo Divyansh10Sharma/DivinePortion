@@ -6,6 +6,7 @@ import { newId } from '../lib/ids';
 import type { Plan } from '../lib/types';
 import { savePlan } from '../hooks/planSync';
 import { showUndo } from '../components/toast/toastStore';
+import { scheduleOrphanCleanup } from '../db/photos';
 import { MealIconNode } from '../components/icons/icons';
 import { TextInput } from '../components/inputs/TextInput';
 import { DragHandle, SortableList, SortableRow } from '../components/dnd/Sortable';
@@ -45,6 +46,7 @@ export function PlanScreen({ plan }: { plan: Plan }) {
     const { removed, index } = removeById(plan.meals, id);
     if (!removed) return;
     savePlan((p) => ({ ...p, meals: removeById(p.meals, id).list }));
+    scheduleOrphanCleanup();
     closeMeal();
     showUndo(`“${removed.name}” deleted`, () => savePlan((p) => ({ ...p, meals: insertAt(p.meals, removed, index) })));
   }
@@ -61,6 +63,7 @@ export function PlanScreen({ plan }: { plan: Plan }) {
     const { removed, index } = removeById(current?.items ?? [], id);
     if (!removed) return;
     savePlan((p) => updateMeal(p, forMealId, (m) => ({ ...m, items: removeById(m.items, id).list })));
+    scheduleOrphanCleanup();
     if (itemId === id) setItemId(null);
     showUndo(`“${removed.name}” deleted`, () =>
       savePlan((p) => updateMeal(p, forMealId, (m) => ({ ...m, items: insertAt(m.items, removed, index) }))),

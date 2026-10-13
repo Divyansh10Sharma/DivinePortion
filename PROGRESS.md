@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-**Current phase:** Phase 3 complete — waiting for the owner's go-ahead for Phase 4.
+**Current phase:** Phase 4 complete — waiting for the owner's go-ahead for Phase 5.
 
 Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs to a later phase
 
@@ -35,8 +35,8 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 - [x] Basic ANIM-7, ANIM-8
 
 ### Phase 4 — Photos
-- [ ] PHOTO-1 … PHOTO-6 (meals, items, free-slot entries)
-- [ ] ANIM-9
+- [x] PHOTO-1 … PHOTO-6 (meals, items, free-slot entries)
+- [x] ANIM-9
 
 ### Phase 5 — History, settings, export/import
 - [ ] HIST-1, HIST-2
@@ -79,7 +79,7 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | LOG-2 | ✅ | "Mark eaten" on each card ticks every item (incl. extras). The "Eaten" button opens an inline "Keep / Mark as not eaten" choice. Animation per ANIM-3 |
 | LOG-3 | ✅ | The meal sheet ticks/unticks each item, and has an "amount eaten" field per item (blank = planned; typing an amount ticks the item). Status none / partial / eaten is derived on every change |
 | LOG-4 | ✅ | "Add an extra item (today only)" in the sheet: name, amount, unit, kcal, optional P/C/F/fibre. Stored in `DayLog.extraItems`; the plan is untouched. Shown on the card as "+ name · today" |
-| LOG-5 | ⚠️ | Free-slot sheet: name, kcal, optional P/C/F/fibre, multiple entries, remove; budget remaining / over (terracotta). **The optional photo comes in Phase 4**, whose checklist covers photos for free-slot entries |
+| LOG-5 | ✅ | Free-slot sheet: name, kcal, optional P/C/F/fibre, **optional photo**, multiple entries, remove (Undo); budget remaining / over (terracotta) |
 | LOG-6 | ✅ | Targets panel table: Eaten vs Planned for kcal · P · C · F · Fibre. Planned kcal includes the free-slot budget |
 | LOG-7 | ✅ | Four rings (Calories of 2363, Protein / Fat / Fibre minimums) with the §4.4 colours and a check when met, plus a one-line text warning so colour isn't the only signal. Uses `DayLog.targetsSnapshot` |
 | LOG-8 | ⏳ | Phase 5 (Settings) |
@@ -87,17 +87,21 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | HIST-1, HIST-2 | ⏳ | Phase 5 |
 | HIST-3 | ✅ | `ensureDayLog` never rewrites an existing log; plan writes only touch today's log (`updatePlan` / `applyPlanToToday`). Unit-tested in `src/db/plan.test.ts`: several plan edits, a silent sync and a merge leave yesterday's log deep-equal to before |
 | PLAN-1 | ✅ | Plan tab: add meal, delete (swipe left or "Delete meal" in the editor; Undo toast), rename (editor), reorder by dragging the ⋮⋮ grip (dnd-kit; drag starts only from the handle, so scrolling and swiping elsewhere still work). Verified in headless Chrome |
-| PLAN-2 | ⚠️ | Time (iOS time wheel, validated `HH:MM`), name, icon, badge and note are all editable. **The meal photo comes in Phase 4** (the PHOTO checklist) |
+| PLAN-2 | ✅ | Time (iOS time wheel, validated `HH:MM`), name, icon, photo (add / replace / remove), badge and note are all editable |
 | PLAN-3 | ✅ | 10 icons (sunrise, sun, star, coffee, leaf, moon, apple, bowl, cup, sparkle) as forest circles with cream lucide glyphs; the selected one gets a gold ring |
 | PLAN-4 | ✅ | "Free slot" toggle with editable kcal budget and hint. Items are kept (hidden) while a meal is a free slot, so toggling back loses nothing |
 | PLAN-5 | ✅ | Meal editor: add item, delete (swipe left or "Delete item"; Undo toast), reorder by drag handle, tap to open the item editor |
-| PLAN-6 | ⚠️ | Name, amount, unit (known units offered as suggestions, any free text allowed), kcal / P / C / F / fibre, note. **The item photo comes in Phase 4** |
+| PLAN-6 | ✅ | Name, amount, unit (known units offered as suggestions, any free text allowed), kcal / P / C / F / fibre, photo, note |
 | PLAN-7 | ✅ | Base per 100 g / 100 ml / piece: add (pre-filled from the current values), edit, remove. Badge shows "Auto from base" or "Manual". Editing the amount recalculates from a compatible base; typing a value makes the item manual; "Recalculate from base" goes back. An incompatible unit shows a terracotta warning and keeps manual values. Unit-tested, and checked in the browser (Peanut Butter 20 g → 127.8 kcal) |
 | PLAN-8 | ✅ | Swipe left reveals red "Delete"; swipe further (or flick) deletes. Every meal / item delete shows a 5s "Undo" toast that re-inserts at the original position. Undo is also offered when removing today's extras and free-slot entries |
 | PLAN-9 | ✅ | Each plan write runs in one transaction with today's log. With no logging activity, today is re-snapshotted silently; otherwise a pending flag is set, and leaving the Plan tab asks "Apply these plan changes to today too?". Yes merges, keeping eaten state for surviving meal/item IDs; No keeps today. Unit-tested (`planMerge.test.ts`, `plan.test.ts`) and checked end-to-end in the browser |
 | PLAN-10 | ✅ | Plan title is inline-editable at the top of the Plan tab; the Today header shows "{computed kcal} kcal {title}" (a preview line under the title shows exactly that) |
-| PHOTO-1 … PHOTO-4, PHOTO-6 | ⏳ | Phase 4 |
-| PHOTO-5 | ✅ | `PlatePlaceholder` SVG: porcelain plate (rim, inner shadow, gold line) on linen |
+| PHOTO-1 | ✅ | `PhotoPicker` (`<input type="file" accept="image/*">`, which on iPhone offers camera or library) for meals (meal editor), plan items (item editor), and today's extras and free-slot entries (quick-entry form) |
+| PHOTO-2 | ✅ | `lib/images.ts`: `createImageBitmap(file, { imageOrientation: 'from-image' })`, falling back to an `<img>` decode. Scaled to ≤ 1000 px on the long edge, encoded with `canvas.toBlob('image/jpeg', 0.8)`; the stored MIME type is the encoder's actual output. Verified in Chrome: a 3000×2000 JPEG tagged EXIF orientation 6 was stored as a 667×1000 `image/jpeg` the right way up |
+| PHOTO-3 | ✅ | Stored in IndexedDB `photos` as `ArrayBuffer` + `mimeType` (+ width, height, createdAt). `PhotoView` makes a Blob + object URL only while mounted and revokes it on unmount or change |
+| PHOTO-4 | ✅ | A 24 px (long edge) JPEG thumbnail data URL is stored with each photo |
+| PHOTO-5 | ✅ | `PlatePlaceholder` SVG: porcelain plate (rim, inner shadow, gold line) on linen. Shown wherever a meal / item / entry has no photo (cards, sheets, editor rows) |
+| PHOTO-6 | ✅ | Replace = pick again; Remove = button. `deleteOrphanPhotos` removes photos referenced by neither the plan nor **any** DayLog (snapshots, extras, entries). It runs on launch and 15 s after a removal / delete, i.e. after the Undo window; photos younger than 10 min are kept (they may sit in an unsaved form). Unit-tested, including "a past day still uses it → kept" |
 | SET-1 … SET-6 | ⏳ | Phase 5 |
 | SET-7 | ⚠️ | Storage status + version already shown in Settings; the full Settings screen comes in Phase 5 |
 | NAV-1 | ✅ | Frosted cream glass (`-webkit-backdrop-filter` too), gold hairline, safe-area bottom, active tab forest + sliding indicator |
@@ -111,9 +115,10 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | ANIM-11 | ✅ | `<MotionConfig reducedMotion="user">` at the root; `AnimatedNumber` jumps and the settle is skipped under reduced motion. Verified with emulated reduced motion: no errors |
 | ANIM-7 | ✅ (basic) | dnd-kit sortable: neighbours slide out of the way with transform transitions; the lifted row scales 1.02 and casts a shadow; vertical axis only |
 | ANIM-8 | ✅ (basic) | Framer `drag="x"` with direction lock (vertical scroll still works); the red layer fades in by opacity; release animates the row away or springs it back |
-| ANIM-9, ANIM-10, ANIM-12 | ⏳ | Phases 4–6 (everything so far animates only transform / opacity / SVG stroke) |
+| ANIM-9 | ✅ | The blurred 24 px thumbnail shows at once (CSS blur, slightly scaled); the full image fades in over it (opacity) once loaded |
+| ANIM-10, ANIM-12 | ⏳ | Phase 6 (everything so far animates only transform / opacity / SVG stroke) |
 
-Unit tests (Vitest, 63 passing):
+Unit tests (Vitest, 66 passing):
 - `src/lib/nutrition.test.ts`: scaling, compatibility, eaten value, meal status, planned totals, display rounding.
 - `src/db/seed.test.ts`: §4.3 per-meal and day totals, seed only when empty.
 - `src/lib/dayLog.test.ts` (runs in IST): local date vs `toISOString` at 04:45, midnight rollover, deep-copy day creation, whole / partial meals (with and without a base), over-eating, extras, free slot entries and budget, §4.4 projections, next meal.
@@ -122,6 +127,7 @@ Unit tests (Vitest, 63 passing):
 - `src/lib/planEdit.test.ts`: smart scaling (amount → base, manual switch, recalculate, incompatible unit, add/edit/remove base, per-piece), move/remove/insert-at (undo), free-slot toggle, time validation.
 - `src/lib/planMerge.test.ts`: PLAN-9 silent sync vs ask; merge keeps surviving eaten state / extras / free-slot entries and drops deleted ones; free-slot flips.
 - `src/db/plan.test.ts`: **HIST-3** (past log unchanged after edits, sync and merge), PLAN-9 end-to-end in IndexedDB, plan writes bump `updatedAt`.
+- `src/db/photos.test.ts`: `fitWithin` (1000 px cap, no upscaling), ArrayBuffer round-trip, orphan clean-up (keeps plan / past-day / entry photos and fresh ones, deletes true orphans).
 
 ---
 
@@ -155,3 +161,8 @@ Unit tests (Vitest, 63 passing):
 26. **Undo toasts:** one at a time (a new one replaces the old), 5s, shown above the tab bar and above sheets. Undo re-inserts the deleted meal/item at its old position.
 27. **Editors save via updaters:** sheets pass functions that are applied to the freshly stored meal/item inside the save transaction, so quick edits across fields can't overwrite each other.
 28. **Version:** 0.3.0 for Phase 3.
+29. **Where item photos show:** in the meal detail sheet, the plan editor rows and the free-slot entry rows (36 px thumbnails). The Today poster cards show only the meal photo, so the poster stays as clean as the original design.
+30. **Photos on today's extras and free-slot entries** are both offered through the same quick-entry form (PHOTO-1 says "meal or item … and free-slot entry", and extras are items).
+31. **Orphan photo clean-up timing:** on launch, and 15 s after any photo removal or meal/item delete (so Undo still works), with a 10-minute grace period for brand-new photos.
+32. **Thumbnail blur** is applied when displayed (CSS `blur`) rather than baked into the data URL; the stored thumbnail is a plain 24 px JPEG.
+33. **Version:** 0.4.0 for Phase 4.

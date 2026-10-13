@@ -13,6 +13,8 @@ import { NumberInput } from '../inputs/NumberInput';
 import { QuickItemForm } from '../inputs/QuickItemForm';
 import { BottomSheet } from './BottomSheet';
 import { showUndo } from '../toast/toastStore';
+import { ItemThumb } from '../photos/ItemThumb';
+import { scheduleOrphanCleanup } from '../../db/photos';
 
 const STATUS_LABEL = { none: 'Not eaten yet', partial: 'Partly eaten', eaten: 'Eaten' } as const;
 
@@ -39,7 +41,7 @@ function SheetHeader({ meal, log }: { meal: Meal; log: DayLog }) {
   const status = mealLogOf(log, meal.id).status;
   return (
     <div className="flex items-center gap-3.5 px-4 pt-1 pb-3">
-      <MealPhoto size={72} layoutId={`photo-${meal.id}`} eaten={status === 'eaten'} />
+      <MealPhoto photoId={meal.photoId} size={72} layoutId={`photo-${meal.id}`} eaten={status === 'eaten'} />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold tracking-[0.14em] text-olive uppercase tabular">{meal.time}</p>
         <h2 className="font-serif text-[22px] leading-tight font-semibold text-espresso">{meal.name}</h2>
@@ -112,6 +114,7 @@ function MealBody({ meal, log, actions }: { meal: Meal; log: DayLog; actions: Lo
             onAmount={(a) => actions.setItemAmount(meal.id, item.id, a)}
             onRemove={() => {
               actions.removeExtra(meal.id, item.id);
+              if (item.photoId) scheduleOrphanCleanup();
               showUndo(`“${item.name}” removed`, () => actions.restoreExtra(meal.id, item));
             }}
           />
@@ -158,6 +161,7 @@ function ItemRow({
         {ticked && <DrawnCheck size={15} />}
       </button>
 
+      <ItemThumb photoId={item.photoId} />
       <div className="min-w-0 flex-1">
         <p className="text-[14px] leading-snug text-espresso">
           {item.name}
@@ -224,12 +228,14 @@ function FreeSlotBody({ meal, log, actions }: { meal: Meal; log: DayLog; actions
         <ul className="divide-y divide-gold/25">
           {entries.map((e) => (
             <li key={e.id} className="flex items-center gap-3 py-2.5">
+              <ItemThumb photoId={e.photoId} />
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] text-espresso">{e.name}</p>
                 <p className="text-[11px] text-warm-grey tabular">{macroText(e)}</p>
               </div>
               <button aria-label={`Remove ${e.name}`} onClick={() => {
                   actions.removeEntry(meal.id, e.id);
+                  if (e.photoId) scheduleOrphanCleanup();
                   showUndo(`“${e.name}” removed`, () => actions.restoreEntry(meal.id, e));
                 }} className="p-1 text-warm-grey active:text-terracotta">
                 <X size={16} />
