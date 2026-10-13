@@ -73,7 +73,7 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | HOME-1 | ✅ | Header, targets panel, timeline, totals bar, footer; rendered from today's DayLog snapshot |
 | HOME-2 | ✅ | Live `plannedWithSnack` kcal → 2363, with leaf flourishes |
 | HOME-3 | ✅ | Pill strip, protein live from items → 143g |
-| HOME-4 | ✅ | Time + icon node, plate frame (placeholder), name, items with right-aligned grey macros, bold subtotal, top-right forest pill |
+| HOME-4 | ✅ (adapted) | Time + icon node, plate frame, name, items with right-aligned grey macros, bold subtotal, forest pill. The pill now sits **under the meal name, left-aligned** instead of top-right (owner request, Decision 48) |
 | HOME-5 | ✅ | Dashed olive border, porcelain, "~130 kcal", hint until something is logged; then the entries plus remaining / over |
 | HOME-6 | ✅ | Item note inline italic; meal badge as terracotta uppercase pill |
 | HOME-7 | ✅ | Meals-only line (2233 · 143 · 325 · 39 · 58) + "With snack: 2363 kcal" |
@@ -200,3 +200,4 @@ Phase 6 re-audit (all requirement IDs above re-checked; SPEC.md unchanged). Unit
     - **Status bar:** this deviates from IOS-5 for dark only. A dark background needs white status-bar text, so dark uses `black-translucent`; light keeps `default`. iOS reads this meta when the installed app launches, so after switching theme the status bar follows on the next launch (noted in Settings). The manifest background / theme colour is now the dark background, so the launch splash is dark.
     - **Frosted strip:** the strip under the status bar is now frosted glass (instead of solid cream), so it blends with both themes.
     - **Version:** 1.1.0.
+48. **Meal card header (owner request, deviates from HOME-4's "pill top-right"):** the meal name comes first, with the "kcal / Protein" pill directly under it, left-aligned next to the photo. Applies to Today and History cards (same component). Version 1.1.1.

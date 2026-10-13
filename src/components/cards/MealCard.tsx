@@ -9,7 +9,7 @@ import type { LogActions } from '../../hooks/useLogActions';
 import { DrawnCheck } from '../anim/DrawnCheck';
 import { MealPhoto } from './MealPhoto';
 
-/** Dark-green pill, top-right of each card (HOME-4): "554 kcal / 40g Protein". */
+/** Dark-green pill under the meal name (HOME-4, moved by owner request): "554 kcal / 40g Protein". */
 function KcalBadge({ kcal, protein }: { kcal: number; protein: number }) {
   return (
     <span className="shrink-0 rounded-full bg-forest px-2.5 py-1 text-[11px] font-semibold leading-none whitespace-nowrap text-cream tabular">
@@ -168,10 +168,11 @@ export function MealCard({
           <MealPhoto photoId={meal.photoId} size={60} layoutId={readOnly ? undefined : `photo-${meal.id}`} eaten={status === 'eaten'} parallax={!readOnly} />
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex justify-end">
+          {/* Owner request: name first, then the kcal / protein pill under it, left-aligned. */}
+          <h3 className="pt-0.5 font-serif text-[17px] leading-snug font-semibold text-espresso">{meal.name}</h3>
+          <div className="mt-1.5">
             <KcalBadge kcal={subtotal.kcal} protein={subtotal.protein} />
           </div>
-          <h3 className="mt-1.5 font-serif text-[17px] leading-snug font-semibold text-espresso">{meal.name}</h3>
           {meal.badge && (
             <div className="mt-1">
               <NoteBadge text={meal.badge} />
