@@ -33,7 +33,7 @@ Other scripts:
   - Drag **⋮⋮** to reorder meals and items; swipe left to delete (an Undo toast appears for 5 seconds).
   - In an item, add a **base** (per 100 g / 100 ml / piece). Changing the amount then recalculates the values; typing a value makes them manual, and **Recalculate from base** switches back.
   - Changes apply from today onward. If you've already logged something today, leaving the Plan tab asks whether to apply them to today too. Past days never change.
-- **Photos:** add one to any meal or item (in its editor), or to an extra / snack entry, from the camera or the library. Photos are compressed on the phone and stored only on the device.
+- **Photos:** add one to any meal or item (in its editor), or to an extra / snack entry, from the camera or the library. A **Move and scale** screen lets you drag and pinch to frame it in the circle; tap **Use photo**. Photos are compressed on the phone and stored only on the device.
 
 ## Preview at iPhone size
 Chrome → F12 → Toggle device toolbar (**Ctrl+Shift+M**) → choose **iPhone 12 Pro** (390×844, same as the 13 Pro).

@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react';
 import { Camera, Loader2, Trash2 } from 'lucide-react';
-import { processImage } from '../../lib/images';
+import { decodeImage, encodeImage, type DecodedImage, type SourceRect } from '../../lib/images';
 import { savePhoto, scheduleOrphanCleanup } from '../../db/photos';
 import { showToast } from '../toast/toastStore';
 import { PhotoView } from './PhotoView';
+import { CropDialog } from './CropDialog';
 
 /**
  * PHOTO-1: <input type="file" accept="image/*"> — on iPhone this offers Take Photo / Photo Library.
- * The file is compressed (PHOTO-2) and stored (PHOTO-3) before `onChange` receives the new id.
+ * The picked photo first opens the crop screen (owner request); the chosen square is then
+ * compressed (PHOTO-2) and stored (PHOTO-3) before `onChange` receives the new id.
  * Replace = pick again; Remove = onChange(undefined). The old photo is cleaned up later if nothing
  * else (e.g. a past day) still uses it (PHOTO-6).
  */
@@ -24,20 +26,41 @@ export function PhotoPicker({
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [cropping, setCropping] = useState<DecodedImage | null>(null);
 
   async function onFile(file: File | undefined) {
+    // Allow picking the same file again next time.
+    if (input.current) input.current.value = '';
     if (!file) return;
     setBusy(true);
     try {
-      const id = await savePhoto(await processImage(file));
-      onChange(id);
-      if (photoId) scheduleOrphanCleanup();
+      setCropping(await decodeImage(file));
     } catch {
       showToast({ message: "Couldn't read that image. Try another photo." });
     } finally {
       setBusy(false);
-      // Allow picking the same file again.
-      if (input.current) input.current.value = '';
+    }
+  }
+
+  function closeCrop() {
+    cropping?.close();
+    setCropping(null);
+  }
+
+  async function onCropped(rect: SourceRect) {
+    if (!cropping) return;
+    const image = cropping;
+    setCropping(null);
+    setBusy(true);
+    try {
+      const id = await savePhoto(await encodeImage(image, rect));
+      onChange(id);
+      if (photoId) scheduleOrphanCleanup();
+    } catch {
+      showToast({ message: "Couldn't save that photo. Try again." });
+    } finally {
+      image.close();
+      setBusy(false);
     }
   }
 
@@ -84,6 +107,7 @@ export function PhotoPicker({
         className="hidden"
         onChange={(e) => void onFile(e.target.files?.[0])}
       />
+      {cropping && <CropDialog image={cropping} onCancel={closeCrop} onConfirm={(rect) => void onCropped(rect)} />}
     </div>
   );
 }

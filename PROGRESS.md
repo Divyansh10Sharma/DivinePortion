@@ -37,6 +37,7 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 ### Phase 4 — Photos
 - [x] PHOTO-1 … PHOTO-6 (meals, items, free-slot entries)
 - [x] ANIM-9
+- [x] **Owner request:** crop step after picking a photo (see Decision 34)
 
 ### Phase 5 — History, settings, export/import
 - [ ] HIST-1, HIST-2
@@ -118,7 +119,7 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 | ANIM-9 | ✅ | The blurred 24 px thumbnail shows at once (CSS blur, slightly scaled); the full image fades in over it (opacity) once loaded |
 | ANIM-10, ANIM-12 | ⏳ | Phase 6 (everything so far animates only transform / opacity / SVG stroke) |
 
-Unit tests (Vitest, 66 passing):
+Unit tests (Vitest, 70 passing):
 - `src/lib/nutrition.test.ts`: scaling, compatibility, eaten value, meal status, planned totals, display rounding.
 - `src/db/seed.test.ts`: §4.3 per-meal and day totals, seed only when empty.
 - `src/lib/dayLog.test.ts` (runs in IST): local date vs `toISOString` at 04:45, midnight rollover, deep-copy day creation, whole / partial meals (with and without a base), over-eating, extras, free slot entries and budget, §4.4 projections, next meal.
@@ -127,6 +128,7 @@ Unit tests (Vitest, 66 passing):
 - `src/lib/planEdit.test.ts`: smart scaling (amount → base, manual switch, recalculate, incompatible unit, add/edit/remove base, per-piece), move/remove/insert-at (undo), free-slot toggle, time validation.
 - `src/lib/planMerge.test.ts`: PLAN-9 silent sync vs ask; merge keeps surviving eaten state / extras / free-slot entries and drops deleted ones; free-slot flips.
 - `src/db/plan.test.ts`: **HIST-3** (past log unchanged after edits, sync and merge), PLAN-9 end-to-end in IndexedDB, plan writes bump `updatedAt`.
+- `src/lib/crop.test.ts`: crop maths (cover + centre, the square always stays covered, zoom keeps the pinch point fixed, 1×–5× limits, portrait / landscape).
 - `src/db/photos.test.ts`: `fitWithin` (1000 px cap, no upscaling), ArrayBuffer round-trip, orphan clean-up (keeps plan / past-day / entry photos and fresh ones, deletes true orphans).
 
 ---
@@ -166,3 +168,4 @@ Unit tests (Vitest, 66 passing):
 31. **Orphan photo clean-up timing:** on launch, and 15 s after any photo removal or meal/item delete (so Undo still works), with a 10-minute grace period for brand-new photos.
 32. **Thumbnail blur** is applied when displayed (CSS `blur`) rather than baked into the data URL; the stored thumbnail is a plain 24 px JPEG.
 33. **Version:** 0.4.0 for Phase 4.
+34. **Photo crop (owner request after Phase 4 iPhone testing, not in SPEC.md).** The iOS file picker offers no crop for web pages, so every picked or taken photo opens an in-app **Move and scale** screen: drag to move, pinch / slider / mouse wheel to zoom (1×–5×), with a circle guide because photos show in round frames. **Use photo** stores the square around the circle (≤ 1000 px JPEG, same rules as PHOTO-2); **Cancel** stores nothing. Only the cropped image is kept, not the original. It applies to camera shots too, since a web page can't tell camera from library. Version 0.4.1.
