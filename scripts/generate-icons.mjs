@@ -1,42 +1,49 @@
-// Generates all PWA / iOS icons from assets/icon-source.svg (IOS-3).
-// Run with: npm run icons   (outputs are committed in public/, so this is only needed after editing the SVG)
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+// Generates all PWA / iOS icons from the image named by `AppIcon` in assets/index.js (IOS-3).
+// Runs automatically before `npm run build` and `npm run dev` (npm "pre" scripts), so the
+// generated files in public/ are not committed — changing AppIcon and pushing is enough.
+// Manual run: npm run icons
+import { access, mkdir } from 'node:fs/promises';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import sharp from 'sharp';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const source = path.join(root, 'assets', 'icon-source.svg');
+const assetsDir = path.join(root, 'assets');
 const out = path.join(root, 'public');
-const CREAM = '#F6F1E7';
+const BACKGROUND = '#0F1A14'; // dark theme background — fills transparent pixels (iOS shows black there otherwise)
+
+const { AppIcon } = await import(pathToFileURL(path.join(assetsDir, 'index.js')).href);
+if (typeof AppIcon !== 'string' || AppIcon.trim() === '') {
+  throw new Error('assets/index.js must export AppIcon, e.g. export const AppIcon = "./MyIcon.png";');
+}
+const source = path.resolve(assetsDir, AppIcon);
+try {
+  await access(source);
+} catch {
+  throw new Error(`AppIcon points to ${path.relative(root, source)}, which does not exist.`);
+}
+const meta = await sharp(source).metadata();
+if (meta.width !== meta.height) {
+  console.warn(`AppIcon is ${meta.width}×${meta.height}, not square — it will be centre-cropped.`);
+}
 
 await mkdir(out, { recursive: true });
-const svg = await readFile(source);
 
-/** Full-bleed icon: the SVG already has a cream background. flatten() guarantees no alpha (iOS shows black behind transparency). */
-async function plain(size, file) {
-  await sharp(svg, { density: 384 })
-    .resize(size, size)
-    .flatten({ background: CREAM })
-    .png()
+/** Square, centre-cropped, full-bleed icon with no alpha channel. */
+async function icon(size, file, { palette = false } = {}) {
+  await sharp(source)
+    .resize(size, size, { fit: 'cover', position: 'centre' })
+    .flatten({ background: BACKGROUND })
+    // Palette PNGs are ~60% smaller and look the same at icon sizes; they're precached for offline (IOS-9).
+    .png(palette ? { palette: true, quality: 90, effort: 10, dither: 1 } : { compressionLevel: 9 })
     .toFile(path.join(out, file));
 }
 
-/** Maskable icon: the plate is shrunk into the central ~80% safe zone so Android masks never crop it. */
-async function maskable(size, file) {
-  const inner = Math.round(size * 0.8);
-  const art = await sharp(svg, { density: 384 }).resize(inner, inner).png().toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 3, background: CREAM } })
-    .composite([{ input: art, gravity: 'center' }])
-    .flatten({ background: CREAM })
-    .png()
-    .toFile(path.join(out, file));
-}
+// The iPhone home-screen icon stays full colour (it's small anyway) for the best quality.
+await icon(180, 'apple-touch-icon.png');
+await icon(192, 'pwa-192.png', { palette: true });
+await icon(512, 'pwa-512.png', { palette: true });
+await icon(512, 'pwa-maskable-512.png', { palette: true }); // full-bleed; the mask trims only the edges
+await icon(64, 'favicon.png', { palette: true });
 
-await plain(180, 'apple-touch-icon.png');
-await plain(192, 'pwa-192.png');
-await plain(512, 'pwa-512.png');
-await maskable(512, 'pwa-maskable-512.png');
-await writeFile(path.join(out, 'favicon.svg'), svg);
-
-console.log('Icons written to public/');
+console.log(`Icons generated from assets/${path.relative(assetsDir, source).replaceAll('\\', '/')}`);

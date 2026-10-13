@@ -4,3 +4,10 @@ dev-dist
 *.local
 .DS_Store
 coverage
+
+# App icons are generated from assets/index.js (AppIcon) on every dev/build run — not committed.
+public/apple-touch-icon.png
+public/pwa-192.png
+public/pwa-512.png
+public/pwa-maskable-512.png
+public/favicon.png

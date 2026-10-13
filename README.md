@@ -21,7 +21,7 @@ Other scripts:
 |---|---|
 | `npm run typecheck` | `tsc --noEmit` (strict) |
 | `npm run lint` | ESLint |
-| `npm run icons` | Regenerates `public/*.png` icons from `assets/icon-source.svg` (only needed after editing the SVG) |
+| `npm run icons` | Generates `public/*.png` icons (home screen, manifest, favicon) from the image named in `assets/index.js`. Runs automatically before `dev` and `build` |
 
 ## Using it
 - **Today** shows today's plan as a poster. Each day gets its own log (a copy of the plan), created the first time the app opens that day; it also rolls over at midnight if the app stays open.
@@ -38,6 +38,13 @@ Other scripts:
 - **Settings:** daily targets (apply from today), the three poster footer items, backup, reset today's log, storage status and version.
 - **Appearance:** dark gradient theme by default; switch to the original cream **Light** theme in Settings → Appearance. On the installed app the status-bar colour follows after the next launch.
 - The iPhone's **Reduce Motion** setting is respected: movement becomes simple fades.
+
+## Changing the app icon
+1. Put the new image in `assets/` (PNG or JPEG; square is best, other shapes are centre-cropped).
+2. In `assets/index.js`, point `AppIcon` at it, e.g. `export const AppIcon = './MyIcon.png';`
+3. Commit and push. The build regenerates every icon (iPhone home screen, app, maskable, favicon); if the path is wrong the build stops with a clear error.
+
+iOS keeps the home-screen icon it saw when Plate was added, so on the iPhone: back up (Settings → Export backup → Save to Files), remove Plate from the Home Screen, add it again from Safari, then Settings → Import backup.
 
 ## Backup (do this regularly)
 iOS can clear the data of a home-screen app that isn't used for a while, and the installed app's data is separate from Safari.
@@ -146,9 +153,9 @@ Run on the iPhone 13 Pro with the **installed Home Screen app** after each deplo
 
 ## Project layout
 ```
-assets/            icon-source.svg (single icon source)
+assets/            index.js (`AppIcon` = which image is the app icon) + the icon images
 scripts/           generate-icons.mjs
-public/            generated icons, favicon
+public/            generated icons (apple-touch-icon, pwa-192/512, maskable, favicon.png) — built, not committed
 src/
   db/              Dexie schema (db.ts), seed data (seed.ts), day logs (dayLogs.ts), plan writes (plan.ts), photos.ts,
                    settings.ts, backup.ts (export / import)

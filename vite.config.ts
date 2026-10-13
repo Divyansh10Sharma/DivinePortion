@@ -19,7 +19,7 @@ export default defineConfig({
       // deferred by src/lib/swUpdate.ts so it never interrupts an open sheet/editor.
       registerType: 'autoUpdate',
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Plate — Meal Plan',
         short_name: 'Plate',
