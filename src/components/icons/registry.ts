@@ -1,4 +1,5 @@
-// Icon registry (PLAN-3): inline SVG icons from lucide-react, keyed by the string stored in data.
+// Icon registry: inline SVG icons from lucide-react, keyed by the string stored in data.
+// v2: only the poster footer uses these (meal timeline icons were dropped — owner request).
 
 import {
   Apple,
@@ -13,12 +14,11 @@ import {
   Star,
   Sun,
   Sunrise,
-  Utensils,
   type LucideIcon,
 } from 'lucide-react';
-import type { FooterIcon, KnownMealIcon, MealIcon } from '../../lib/types';
+import type { FooterIcon, KnownMealIcon } from '../../lib/types';
 
-export const MEAL_ICONS: Record<KnownMealIcon, LucideIcon> = {
+const MEAL_ICONS: Record<KnownMealIcon, LucideIcon> = {
   sunrise: Sunrise,
   sun: Sun,
   star: Star,
@@ -36,10 +36,6 @@ const FOOTER_ICONS: Record<string, LucideIcon> = {
   droplet: Droplet,
   clock: Clock,
 };
-
-export function mealIconComponent(icon: MealIcon): LucideIcon {
-  return MEAL_ICONS[icon as KnownMealIcon] ?? Utensils;
-}
 
 export function footerIconComponent(icon: FooterIcon): LucideIcon {
   return FOOTER_ICONS[icon] ?? Leaf;

@@ -4,21 +4,18 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, seedIfEmpty } from './db/db';
 import { deleteOrphanPhotos } from './db/photos';
 import { requestPersistentStorage } from './lib/storage';
+import { applyTheme, DEFAULT_THEME } from './lib/theme';
 import { useActiveTab, TABS, type Tab } from './hooks/useActiveTab';
-import { useToday } from './hooks/useToday';
-import { useUiLocked } from './lib/uiLocks';
-import { TabBar, TAB_BAR_HEIGHT } from './components/nav/TabBar';
-import { TodayScreen } from './screens/TodayScreen';
-import { HistoryScreen } from './screens/HistoryScreen';
 import { prepareExport } from './hooks/backupFlow';
 import { ScrollContainerContext } from './hooks/scrollContainer';
-import { applyTheme, DEFAULT_THEME } from './lib/theme';
-import { PlanScreen } from './screens/PlanScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
-import { applyPlanToToday, todayDiffersFromPlan } from './db/plan';
-import { setPlanChangePending, usePlanChangePending } from './hooks/planSync';
+import { useUiLocked } from './lib/uiLocks';
+import { TabBar, TAB_BAR_HEIGHT } from './components/nav/TabBar';
 import { Toaster } from './components/toast/Toaster';
-import { ConfirmDialog } from './components/dialog/ConfirmDialog';
+import { TodayScreen } from './screens/TodayScreen';
+import { PlansScreen } from './screens/PlansScreen';
+import { MealsScreen } from './screens/MealsScreen';
+import { ItemsScreen } from './screens/ItemsScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 
 /** Launch work: seed the DB if empty (§5), request persistent storage (IOS-10), clean up orphan photos (PHOTO-6). */
 function useBootstrap(): { ready: boolean; error: string | null } {
@@ -28,7 +25,6 @@ function useBootstrap(): { ready: boolean; error: string | null } {
     seedIfEmpty()
       .then(() => {
         if (alive) setState({ ready: true, error: null });
-        // PHOTO-6: remove photos nothing references any more (never ones used by past days).
         void deleteOrphanPhotos().catch(() => {});
       })
       .catch((e: unknown) => alive && setState({ ready: false, error: String(e) }));
@@ -40,61 +36,48 @@ function useBootstrap(): { ready: boolean; error: string | null } {
   return state;
 }
 
+/**
+ * v2 redesign (owner request): four sections — Today (current meals + totals), Plans (saved plans),
+ * Meals (edit the current meals), Items ("Your items", per 100 g). Settings opens from Today's gear.
+ */
 export default function App() {
   const { ready, error } = useBootstrap();
   const [tab, setTab] = useActiveTab();
   const plan = useLiveQuery(() => (ready ? db.plan.get('active') : undefined), [ready]);
   const settings = useLiveQuery(() => (ready ? db.settings.get('settings') : undefined), [ready]);
-  const today = useToday(ready);
-  const logs = useLiveQuery(async () => (ready ? db.dayLogs.toArray() : undefined), [ready]);
+  const library = useLiveQuery(async () => (ready ? db.library.toArray() : undefined), [ready]);
+  const savedPlans = useLiveQuery(async () => (ready ? db.savedPlans.toArray() : undefined), [ready]);
   const locked = useUiLocked();
+  const todayScroller = useRef<HTMLElement>(null);
 
   // Theme: Settings is the source of truth (it's also restored by an import); keep the page in sync.
   const theme = settings?.theme ?? DEFAULT_THEME;
   useEffect(() => {
     if (settings) applyTheme(theme);
   }, [settings, theme]);
-  const planChangePending = usePlanChangePending();
-  const todayScroller = useRef<HTMLElement>(null);
-  const [askApplyToToday, setAskApplyToToday] = useState(false);
-
-  // PLAN-9: when leaving the Plan tab after edits that couldn't be synced silently (today already
-  // has logging activity), ask whether to apply them to today. Skip if today already matches.
-  function changeTab(next: Tab) {
-    if (tab === 'plan' && next !== 'plan' && planChangePending) {
-      void todayDiffersFromPlan().then((differs) => (differs ? setAskApplyToToday(true) : setPlanChangePending(false)));
-    }
-    setTab(next);
-  }
-
-  function answerApplyToToday(apply: boolean) {
-    setAskApplyToToday(false);
-    setPlanChangePending(false);
-    if (apply) void applyPlanToToday();
-  }
 
   function renderScreen(t: Tab) {
     switch (t) {
       case 'today':
-        return plan && settings && today.log ? (
+        return plan && settings ? (
           <TodayScreen
             plan={plan}
             settings={settings}
-            log={today.log}
-            date={today.date}
-            now={today.now}
+            onOpenSettings={() => setTab('settings')}
             onBackupNow={() => {
-              changeTab('settings');
+              setTab('settings');
               void prepareExport();
             }}
           />
         ) : null;
-      case 'history':
-        return logs ? <HistoryScreen logs={logs} today={today.date} /> : null;
-      case 'plan':
-        return plan ? <PlanScreen plan={plan} /> : null;
+      case 'plans':
+        return plan && savedPlans ? <PlansScreen plan={plan} saved={savedPlans} /> : null;
+      case 'meals':
+        return plan && library ? <MealsScreen plan={plan} library={library} /> : null;
+      case 'items':
+        return library ? <ItemsScreen items={library} /> : null;
       case 'settings':
-        return settings ? <SettingsScreen settings={settings} today={today.date} /> : null;
+        return settings ? <SettingsScreen settings={settings} onBack={() => setTab('today')} /> : null;
     }
   }
 
@@ -108,9 +91,7 @@ export default function App() {
         {/* IOS-2: a frosted strip under the status bar so scrolled content never collides with the clock. */}
         <div aria-hidden className="frosted absolute inset-x-0 top-0 z-20" style={{ height: 'env(safe-area-inset-top)' }} />
 
-        {error && (
-          <p className="p-6 pt-16 text-center text-terracotta">Could not open the on-device database: {error}</p>
-        )}
+        {error && <p className="p-6 pt-16 text-center text-terracotta">Could not open the on-device database: {error}</p>}
 
         {/* IOS-6: every tab is its own scroll container; all stay mounted so scroll position is kept. */}
         {TABS.map((t) => (
@@ -134,19 +115,10 @@ export default function App() {
           </main>
         ))}
 
-        <TabBar active={tab} onChange={changeTab} />
+        <TabBar active={tab} onChange={setTab} />
       </div>
 
       <Toaster />
-      <ConfirmDialog
-        open={askApplyToToday}
-        title="Apply these plan changes to today too?"
-        message="You've already logged meals today. Yes updates today and keeps what you've marked eaten; No leaves today as it is (the changes start tomorrow)."
-        confirmLabel="Yes, apply"
-        cancelLabel="No"
-        onConfirm={() => answerApplyToToday(true)}
-        onCancel={() => answerApplyToToday(false)}
-      />
     </MotionConfig>
   );
 }

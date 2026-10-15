@@ -1,10 +1,10 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fitWithin } from '../lib/images';
-import { addFreeSlotEntry, makeLoggedItem } from '../lib/dayLog';
-import { updateItem, updateMeal } from '../lib/planEdit';
+import { updateMeal } from '../lib/planEdit';
+import type { DayLog } from '../lib/types';
 import { PlateDB, seedIfEmpty } from './db';
-import { ensureDayLog, updateDayLog } from './dayLogs';
+import { saveCurrentPlan } from './library';
 import { updatePlan } from './plan';
 import { deleteOrphanPhotos, savePhoto } from './photos';
 
@@ -33,29 +33,37 @@ describe('photo storage & orphan clean-up (PHOTO-3, PHOTO-6)', () => {
     expect(Array.from(new Uint8Array(p!.data))).toEqual([7, 1, 2]);
   });
 
-  it('deletes only unreferenced photos, never ones used by a past DayLog, and respects the grace period', async () => {
+  it('keeps photos used by the meals, a saved plan or legacy day logs, deletes the rest (with a grace period)', async () => {
     const d = (database = new PlateDB(`test-${crypto.randomUUID()}`));
     await seedIfEmpty(d, 1);
     const T = 1_000_000_000;
-    const mealPhoto = await savePhoto(img(1), d, T);
-    const oldItemPhoto = await savePhoto(img(2), d, T);
-    const entryPhoto = await savePhoto(img(3), d, T);
+    const current = await savePhoto(img(1), d, T);
+    const inSavedPlan = await savePhoto(img(2), d, T);
+    const inOldLog = await savePhoto(img(3), d, T);
     const orphan = await savePhoto(img(4), d, T);
-    const fresh = await savePhoto(img(5), d, T + 5 * 60_000); // e.g. picked into an unsaved form
+    const fresh = await savePhoto(img(5), d, T + 5 * 60_000); // e.g. just picked, form not saved yet
 
-    // Yesterday's snapshot uses the old item photo (and the meal photo).
-    await updatePlan((p) => updateMeal(p, 'm1', (m) => updateItem({ ...m, photoId: mealPhoto }, 'm1-i1', (i) => ({ ...i, photoId: oldItemPhoto }))), d, '2026-10-12', T);
-    await ensureDayLog('2026-10-12', d, T);
-    // Then the plan replaces the item photo — the old one is still referenced by yesterday.
-    await updatePlan((p) => updateMeal(p, 'm1', (m) => updateItem(m, 'm1-i1', (i) => ({ ...i, photoId: undefined }))), d, '2026-10-13', T);
-    // Today's free-slot entry has a photo.
-    await ensureDayLog('2026-10-13', d, T);
-    await updateDayLog('2026-10-13', (l) => addFreeSlotEntry(l, 'm3', { ...makeLoggedItem('f1', { name: 'Nuts', kcal: 100 }), photoId: entryPhoto }), d);
+    // Save a plan while meal 1 shows `inSavedPlan`, then replace it in the current meals.
+    await updatePlan((p) => updateMeal(p, 'm1', (m) => ({ ...m, photoId: inSavedPlan })), d, T);
+    await saveCurrentPlan('Old', d, T);
+    await updatePlan((p) => updateMeal(p, 'm1', (m) => ({ ...m, photoId: current })), d, T);
+    // A legacy (v1) day log that references a photo.
+    const plan = (await d.plan.get('active'))!;
+    const log: DayLog = {
+      date: '2026-10-01',
+      mealsSnapshot: plan.meals.map((m) => (m.id === 'm2' ? { ...m, photoId: inOldLog } : m)),
+      eaten: {},
+      extraItems: {},
+      freeSlotEntries: {},
+      targetsSnapshot: { kcal: 2363, proteinMin: 140, fatMin: 45, fibreMin: 45 },
+      createdAt: T,
+      updatedAt: T,
+    };
+    await d.dayLogs.put(log);
 
-    const deleted = await deleteOrphanPhotos(d, T + 11 * 60_000);
-    expect(deleted).toBe(1);
+    expect(await deleteOrphanPhotos(d, T + 11 * 60_000)).toBe(1);
     const left = (await d.photos.toCollection().primaryKeys()) as string[];
-    expect(left.sort()).toEqual([mealPhoto, oldItemPhoto, entryPhoto, fresh].sort());
+    expect(left.sort()).toEqual([current, inSavedPlan, inOldLog, fresh].sort());
     expect(left).not.toContain(orphan);
   });
 });

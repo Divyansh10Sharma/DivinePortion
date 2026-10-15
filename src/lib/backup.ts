@@ -4,7 +4,7 @@
 // bytes embedded as base64 (§11.11). `schemaVersion` lets future versions migrate or refuse.
 
 import { format } from 'date-fns';
-import type { DayLog, Photo, Plan, Settings } from './types';
+import type { DayLog, LibraryItem, Photo, Plan, SavedPlan, Settings } from './types';
 
 export const BACKUP_APP = 'plate';
 
@@ -19,11 +19,19 @@ export interface BackupFile {
   exportedAt: number;
   settings: Settings;
   plan: Plan;
+  /** Legacy daily logs (v1 data), kept so nothing is lost. */
   dayLogs: DayLog[];
   photos: BackupPhoto[];
+  /** v2: "Your items". Missing in v1 backups. */
+  library?: LibraryItem[];
+  /** v2: saved plans. Missing in v1 backups. */
+  savedPlans?: SavedPlan[];
 }
 
 export interface BackupSummary {
+  meals: number;
+  items: number;
+  savedPlans: number;
   days: number;
   photos: number;
   /** first / last logged date ("YYYY-MM-DD"), undefined when there are no day logs */
@@ -62,7 +70,7 @@ export function base64ToArrayBuffer(b64: string): ArrayBuffer {
 // ---------------------------------------------------------------------------
 
 export function buildBackup(
-  data: { settings: Settings; plan: Plan; dayLogs: DayLog[]; photos: Photo[] },
+  data: { settings: Settings; plan: Plan; dayLogs: DayLog[]; photos: Photo[]; library: LibraryItem[]; savedPlans: SavedPlan[] },
   schemaVersion: number,
   now = Date.now(),
 ): BackupFile {
@@ -74,12 +82,23 @@ export function buildBackup(
     plan: data.plan,
     dayLogs: [...data.dayLogs].sort((a, b) => a.date.localeCompare(b.date)),
     photos: data.photos.map((p) => ({ ...p, data: arrayBufferToBase64(p.data) })),
+    library: [...data.library].sort((a, b) => a.name.localeCompare(b.name)),
+    savedPlans: [...data.savedPlans].sort((a, b) => a.createdAt - b.createdAt),
   };
 }
 
 export function summarize(b: BackupFile): BackupSummary {
   const dates = b.dayLogs.map((l) => l.date).sort();
-  return { days: dates.length, photos: b.photos.length, from: dates[0], to: dates.at(-1), exportedAt: b.exportedAt };
+  return {
+    meals: b.plan.meals.length,
+    items: b.library?.length ?? 0,
+    savedPlans: b.savedPlans?.length ?? 0,
+    days: dates.length,
+    photos: b.photos.length,
+    from: dates[0],
+    to: dates.at(-1),
+    exportedAt: b.exportedAt,
+  };
 }
 
 /** Back to stored shapes (photo bytes as ArrayBuffer). */
@@ -151,6 +170,21 @@ export function validateBackup(raw: unknown, currentSchemaVersion: number): Vali
       atob(ph.data);
     } catch {
       return { ok: false, error: 'A photo in the backup is damaged.' };
+    }
+  }
+
+  if (raw.library !== undefined) {
+    if (!Array.isArray(raw.library)) return { ok: false, error: 'The backup items are damaged.' };
+    for (const l of raw.library) {
+      if (!isObj(l) || !isStr(l.id) || !isStr(l.name) || !isObj(l.per100) || !NUTRIENTS.every((k) => isNum((l.per100 as Record<string, unknown>)[k]))) {
+        return { ok: false, error: 'An item in the backup is damaged.' };
+      }
+    }
+  }
+  if (raw.savedPlans !== undefined) {
+    if (!Array.isArray(raw.savedPlans)) return { ok: false, error: 'The backup saved plans are damaged.' };
+    for (const sp of raw.savedPlans) {
+      if (!isObj(sp) || !isStr(sp.id) || !isStr(sp.name) || !validMeals(sp.meals)) return { ok: false, error: 'A saved plan in the backup is damaged.' };
     }
   }
 

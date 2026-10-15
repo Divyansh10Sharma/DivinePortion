@@ -24,19 +24,15 @@ Other scripts:
 | `npm run icons` | Generates `public/*.png` icons (home screen, manifest, favicon) from the image named in `assets/index.js`. Runs automatically before `dev` and `build` |
 
 ## Using it
-- **Today** shows today's plan as a poster. Each day gets its own log (a copy of the plan), created the first time the app opens that day; it also rolls over at midnight if the app stays open.
-- **Mark eaten** on a card logs the whole meal; tap **Eaten** again to undo.
-- **Tap a card**: it expands into its sheet. Tick single items, type the amount you actually ate, or add an extra item for today only. Drag the sheet down to close it.
-- **Free Slot → Log snack** records what you ate; the card shows the budget remaining or over.
-- The rings at the top track calories and the protein / fat / fibre minimums. Terracotta means over, or on course to fall short.
-- **Plan** tab: edit the plan title, then tap a meal to change its name, time, icon, photo, badge, note and free-slot budget, and its items.
-  - Drag **⋮⋮** to reorder meals and items; swipe left to delete (an Undo toast appears for 5 seconds).
-  - In an item, add a **base** (per 100 g / 100 ml / piece). Changing the amount then recalculates the values; typing a value makes them manual, and **Recalculate from base** switches back.
-  - Changes apply from today onward. If you've already logged something today, leaving the Plan tab asks whether to apply them to today too. Past days never change.
-- **Photos:** add one to any meal or item (in its editor), or to an extra / snack entry, from the camera or the library. A **Move and scale** screen lets you drag and pinch to frame it in the circle; tap **Use photo**. Photos are compressed on the phone and stored only on the device.
-- **History:** a month calendar with a dot per logged day (green = targets met, terracotta = over calories or a minimum missed, grey = nothing eaten logged, olive = today), plus a list. Tap a day to see its poster exactly as logged.
-- **Settings:** daily targets (apply from today), the three poster footer items, backup, reset today's log, storage status and version.
-- **Appearance:** dark gradient theme by default; switch to the original cream **Light** theme in Settings → Appearance. On the installed app the status-bar colour follows after the next launch.
+Four sections in the tab bar:
+- **Today:** your current meals as a poster, with the **total macros on top** (kcal · protein · carbs · fat · fibre, plus the total with the free-slot snack). The gear (top right) opens **Settings**.
+- **Plans:** **Save current meals as a plan**, give it a name, and it appears as a card. Tap a card to see that plan; **Use this plan** makes it your current meals (after a confirmation — save the current meals first if you want to keep them).
+- **Meals:** edit the current meals — name, time, photo, badge, note, free slot with its kcal budget. Drag **⋮⋮** to reorder, swipe left to delete (Undo for 5 s). Inside a meal, **Add from Your items** lets you search your items, tap one, type the grams and **Add** (you can add several in a row). Tap an item in the meal to change its grams or remove it.
+- **Items ("Your items"):** every food you use, one row each — **Name · Kcal · Protein · Carbs · Fats · Fiber, per 100 g**. **Add** creates one; tap a row to edit or delete it. Editing an item updates it in your current meals (saved plans keep the values they were saved with).
+
+Also:
+- **Photos:** one per meal (in the meal editor), from the camera or the library, framed on the **Move and scale** screen.
+- **Settings** (gear on Today): Dark / Light theme, the three poster footer items, backup export / import, storage status and version.
 - The iPhone's **Reduce Motion** setting is respected: movement becomes simple fades.
 
 ## Changing the app icon
@@ -110,43 +106,46 @@ Run on the iPhone 13 Pro with the **installed Home Screen app** after each deplo
 - [ ] **No browser chrome:** no address bar or Safari toolbar on any screen.
 - [ ] **Status bar readable:** in Dark, white status-bar text over the dark top strip; in Light (after switching and relaunching), dark text on cream. Check on every tab.
 - [ ] **Theme toggle:** Settings → Appearance → Light switches the whole app at once; close and reopen, and it stays Light with no dark flash. Switch back to Dark.
-- [ ] **Notch clearance:** nothing is hidden under the notch on Today, History, Plan, Settings, or in any sheet, dialog or the crop screen.
+- [ ] **Notch clearance:** nothing is hidden under the notch on Today, Plans, Meals, Items, Settings, or in any sheet, dialog or the crop screen.
 - [ ] **Home-indicator clearance:** the tab bar, the bottom of every sheet, the toast and the crop buttons sit above the home indicator bar.
 - [ ] **No whole-page rubber-band:** pulling down at the top or up at the bottom of a screen bounces only that screen's content; the tab bar and status-bar strip never move.
-- [ ] **Background stays put under sheets:** with a meal sheet open, swiping on the sheet's list doesn't scroll the poster behind it.
+- [ ] **Background stays put under sheets:** with a meal editor or the item picker open, swiping on the sheet's list doesn't scroll the screen behind it.
 
 **Inputs**
-- [ ] **No zoom on focus:** tapping any field (snack name, kcal, amounts, plan fields, targets, footer text) never zooms the page.
-- [ ] **Decimal keypad:** number fields (kcal, amounts, macros, targets) open the decimal keypad; both "1.5" and "1,5" work.
+- [ ] **No zoom on focus:** tapping any field (item name and macros, grams, meal fields, plan name, search, footer text) never zooms the page.
+- [ ] **Decimal keypad:** number fields (macros per 100 g, grams, free-slot budget) open the decimal keypad; both "1.5" and "1,5" work.
 
 **Offline & data**
 - [ ] **Offline launch:** with Airplane Mode on, close the app from the app switcher and reopen it. Everything works, including fonts, icons and photos.
-- [ ] **Data survives relaunch:** log a meal, close the app from the app switcher, reopen. Still logged.
-- [ ] **Data survives phone restart:** restart the iPhone, open Plate. Plan, today's log, history and photos are all there.
-- [ ] **Midnight rollover with the app left open:** leave Plate open (or in the background) across midnight. On returning, Today is a fresh day, and yesterday appears in History with its log intact.
+- [ ] **Data survives relaunch:** add an item to Your items and to a meal, close the app from the app switcher, reopen. Both are still there.
+- [ ] **Data survives phone restart:** restart the iPhone, open Plate. Meals, Your items, saved plans and photos are all there.
 - [ ] **Storage status:** Settings → About → Storage shows "persistent" or "may be evicted" (either is fine; just note which).
 
-**Logging & animation**
-- [ ] **Eaten animation smoothness:** tap **Mark eaten**. The check draws itself, the card settles, and a green ripple spreads from the timeline dot, all without stutter.
-- [ ] **Card → sheet:** tapping a card expands it smoothly into the sheet, and dragging the sheet down shrinks it back into the card.
-- [ ] **Counting numbers & rings:** after logging, the totals count up and the rings fill smoothly.
+**Your items, meals & plans**
+- [ ] **Your items:** Items → **Add** → name + macros per 100 g → **Add item**; it appears as a row. Tap it, change a value, **Save changes**; meals using it update on Today.
+- [ ] **Pick into a meal:** Meals → a meal → **Add from Your items** → search → tap an item → grams → **Add**; Today shows it with the right kcal.
+- [ ] **Saved plans:** Plans → **Save current meals as a plan** → name → **Save**; the card appears. Change a meal, then tap the card → **Use this plan** → **Use plan**; Today shows the saved version again.
+
+**Animation**
+- [ ] **Sheets:** meal editor, item picker and saved-plan view slide up smoothly; dragging the handle down closes them.
+- [ ] **Counting numbers:** after adding an item to a meal, Today's totals count up smoothly.
 - [ ] **Parallax:** scrolling Today makes meal photos drift slightly inside their frames.
 - [ ] **Reduced motion:** turn on iPhone **Settings → Accessibility → Motion → Reduce Motion**. Movement becomes simple fades (no sliding, scaling, parallax or drawing). Turn it off again.
 
 **Plan editing**
-- [ ] **Drag reorder by touch:** in Plan, drag a meal by its **⋮⋮** handle to a new position. Scrolling the list by swiping anywhere else still works normally.
+- [ ] **Drag reorder by touch:** in Meals, drag a meal by its **⋮⋮** handle to a new position. Scrolling the list by swiping anywhere else still works normally.
 - [ ] **Drag reorder items:** same inside a meal's item list.
 - [ ] **Swipe-delete + undo:** swipe a meal or item left to delete it, then tap **Undo** within 5 seconds. It comes back in the same place.
 
 **Photos**
-- [ ] **Camera upload:** Plan → a meal → **Add photo** → **Take Photo** → **Use Photo** → crop → **Use photo**. The photo shows.
+- [ ] **Camera upload:** Meals → a meal → **Add photo** → **Take Photo** → **Use Photo** → crop → **Use photo**. The photo shows.
 - [ ] **Library upload:** **Replace photo** → **Photo Library** → pick a photo → crop. The photo shows.
 - [ ] **Photo orientation correct:** photos taken upright and sideways both appear the right way up.
 - [ ] **Crop:** drag and pinch on the crop screen; the saved photo matches what was in the circle. **Cancel** keeps the old photo.
 
 **Backup**
 - [ ] **Export via share sheet to Files:** Settings → **Export backup** → **Save backup file** → **Save to Files** → iCloud Drive → **Save**. "Last backup" changes to **Today**.
-- [ ] **Import back:** Settings → **Import backup** → pick that file → the summary shows the right number of days and photos → **Replace** → everything is as before.
+- [ ] **Import back:** Settings → **Import backup** → pick that file → the summary shows the right number of meals, items, saved plans and photos → **Replace** → everything is as before.
 
 **Updates**
 - [ ] **App update after redeploy:** after pushing a change, open Plate, wait ~5 s, close and reopen. **Settings → Version** shows the new version, and no data is lost.
@@ -157,16 +156,14 @@ assets/            index.js (`AppIcon` = which image is the app icon) + the icon
 scripts/           generate-icons.mjs
 public/            generated icons (apple-touch-icon, pwa-192/512, maskable, favicon.png) — built, not committed
 src/
-  db/              Dexie schema (db.ts), seed data (seed.ts), day logs (dayLogs.ts), plan writes (plan.ts), photos.ts,
-                   settings.ts, backup.ts (export / import)
-  lib/             types, nutrition math, day-log logic (dayLog.ts), plan editing (planEdit.ts), images.ts, crop.ts,
-                   backup.ts (file format + validation),
-                   PLAN-9 merge (planMerge.ts), local dates, formatting,
+  db/              Dexie schema v2 (db.ts), seed data (seed.ts), plan writes (plan.ts), Your items + saved plans (library.ts),
+                   photos.ts, settings.ts, backup.ts (export / import)
+  lib/             types, nutrition math, Your items logic + v1 migration (library.ts), plan editing (planEdit.ts),
+                   images.ts, crop.ts, backup.ts (file format + validation), formatting,
                    storage persistence, SW update policy, UI locks
-  components/      poster/, timeline/, cards/, rings/, sheets/, inputs/, anim/, icons/, nav/,
-                   plan/ (meal & item editors), dnd/ (sortable, swipe-to-delete), toast/, dialog/, photos/
-  screens/         Today, History, Plan, Settings
-  hooks/           useActiveTab, useToday (local date + rollover), useLogActions, planSync (PLAN-9 prompt state),
-                   backupFlow (export / share state), scrollContainer (parallax)
+  components/      poster/, timeline/, cards/, sheets/, inputs/, anim/, icons/, nav/,
+                   plan/ (meal & item editors), items/ (item form, item picker), dnd/, toast/, dialog/, photos/
+  screens/         Today, Plans, Meals, Items, Settings
+  hooks/           useActiveTab, planSync (savePlan), backupFlow (export / share state), scrollContainer (parallax)
   styles/          index.css (Tailwind v4, palette tokens, linen texture, iOS shell rules)
 ```

@@ -1,12 +1,6 @@
-import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
-import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'motion/react';
-import { Check } from 'lucide-react';
 import { fmt, fmtAmount, sumItems } from '../../lib/nutrition';
 import { macroText } from '../../lib/format';
-import { extrasOf, mealLogOf } from '../../lib/dayLog';
-import type { DayLog, Meal } from '../../lib/types';
-import type { LogActions } from '../../hooks/useLogActions';
-import { DrawnCheck } from '../anim/DrawnCheck';
+import type { Meal } from '../../lib/types';
 import { MealPhoto } from './MealPhoto';
 
 /** Dark-green pill under the meal name (HOME-4, moved by owner request): "554 kcal / 40g Protein". */
@@ -27,148 +21,16 @@ function NoteBadge({ text }: { text: string }) {
   );
 }
 
-const SURFACE_SPRING = { type: 'spring', stiffness: 380, damping: 38 } as const;
-
-/**
- * Shared card chrome: tap anywhere (except buttons) opens the detail sheet; HOME-9 "next" glow; ANIM-3 settle.
- * ANIM-5: the card's background is a separate "surface" layer with a layoutId shared with the bottom
- * sheet's surface, so the card itself expands into the sheet. While the sheet is open the card's
- * surface lives in the sheet and the card's content fades out (its space in the timeline is kept).
- */
-export function CardShell({
-  className,
-  surfaceClass,
-  surfaceId,
-  selected = false,
-  isNext,
-  settle,
-  onOpen,
-  label,
-  readOnly = false,
-  children,
-}: {
-  /** Layout / padding classes of the card. */
-  className: string;
-  /** Background, border and shadow of the card surface. */
-  surfaceClass: string;
-  /** Shared-layout id linking this card to its detail sheet. */
-  surfaceId: string;
-  /** True while this card's sheet is open. */
-  selected?: boolean;
-  isNext: boolean;
-  /** History (HIST-2): not tappable, no actions. */
-  readOnly?: boolean;
-  /** Incremented when the meal becomes eaten → plays the soft scale "settle" once. */
-  settle: number;
-  onOpen: () => void;
-  label: string;
-  children: ReactNode;
-}) {
-  const [scope, animate] = useAnimate<HTMLElement>();
-  const reduced = useReducedMotion();
-
-  useEffect(() => {
-    if (settle === 0 || reduced || !scope.current) return;
-    // ANIM-3: 1 → 0.98 → 1 with a spring; transform only (ANIM-12).
-    void animate(scope.current, { scale: [1, 0.975, 1] }, { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] });
-  }, [settle, reduced, animate, scope]);
-
-  const open = (e: MouseEvent | KeyboardEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return;
-    onOpen();
-  };
-
-  if (readOnly) {
-    return (
-      <article ref={scope} className={`relative ${className}`}>
-        <div aria-hidden className={`absolute inset-0 ${surfaceClass}`} style={{ borderRadius: 22 }} />
-        <div className="relative">{children}</div>
-      </article>
-    );
-  }
-
-  return (
-    <article
-      ref={scope}
-      role="button"
-      tabIndex={0}
-      aria-label={`${label} — open details`}
-      onClick={open}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && open(e)}
-      className={`relative rounded-[22px] ${className} cursor-pointer transition-shadow duration-500 ${
-        // HOME-9: the next meal gets a soft forest ring + glow.
-        isNext && !selected ? 'ring-2 ring-forest/30 shadow-[0_0_0_6px_rgb(31_77_46/0.06)]' : ''
-      }`}
-    >
-      {!selected && (
-        <motion.div
-          aria-hidden
-          layoutId={surfaceId}
-          className={`absolute inset-0 ${surfaceClass}`}
-          // radius in style so motion keeps it round while the surface morphs
-          style={{ borderRadius: 22 }}
-          transition={SURFACE_SPRING}
-        />
-      )}
-      <motion.div
-        className="relative"
-        initial={false}
-        animate={{ opacity: selected ? 0 : 1 }}
-        transition={{ duration: selected ? 0.1 : 0.25, delay: selected ? 0 : 0.18 }}
-      >
-        {children}
-      </motion.div>
-    </article>
-  );
-}
-
-/** HOME-4 + logging (LOG-2, HOME-9). */
-export function MealCard({
-  meal,
-  log,
-  isNext,
-  selected,
-  settle,
-  onOpen,
-  actions,
-  readOnly = false,
-}: {
-  meal: Meal;
-  log: DayLog;
-  readOnly?: boolean;
-  isNext: boolean;
-  /** True while this meal's detail sheet is open — the photo has flown into the sheet. */
-  selected: boolean;
-  settle: number;
-  onOpen: () => void;
-  actions: LogActions;
-}) {
-  const { status, itemOverrides } = mealLogOf(log, meal.id);
+/** HOME-4: a meal card on the Today poster (v2: read-only, no eaten tracking). */
+export function MealCard({ meal }: { meal: Meal }) {
   const subtotal = sumItems(meal.items);
   const items = [...meal.items].sort((a, b) => a.order - b.order);
-  const extras = extrasOf(log, meal.id);
-  const [confirmUndo, setConfirmUndo] = useState(false);
 
   return (
-    <CardShell
-      className="p-3.5"
-      surfaceClass="bg-sage shadow-card"
-      surfaceId={`card-${meal.id}`}
-      selected={selected}
-      isNext={isNext}
-      settle={settle}
-      onOpen={onOpen}
-      label={meal.name}
-      readOnly={readOnly}
-    >
+    <article className="rounded-[22px] bg-sage p-3.5 shadow-card">
       <header className="flex items-start gap-3">
-        {selected ? (
-          <div style={{ width: 60, height: 60 }} className="shrink-0" />
-        ) : (
-          <MealPhoto photoId={meal.photoId} size={60} layoutId={readOnly ? undefined : `photo-${meal.id}`} eaten={status === 'eaten'} parallax={!readOnly} />
-        )}
+        <MealPhoto photoId={meal.photoId} size={60} parallax />
         <div className="min-w-0 flex-1">
-          {/* Owner request: name first, then the kcal / protein pill under it, left-aligned. */}
           <h3 className="pt-0.5 font-serif text-[17px] leading-snug font-semibold text-espresso">{meal.name}</h3>
           <div className="mt-1.5">
             <KcalBadge kcal={subtotal.kcal} protein={subtotal.protein} />
@@ -182,94 +44,27 @@ export function MealCard({
         </div>
       </header>
 
-      <ul className="mt-3 space-y-1.5 border-t border-gold/35 pt-2.5">
-        {items.map((item) => {
-          const o = itemOverrides[item.id];
-          return (
+      {items.length > 0 && (
+        <ul className="mt-3 space-y-1.5 border-t border-gold/35 pt-2.5">
+          {items.map((item) => (
             <li key={item.id} className="flex items-baseline justify-between gap-3 text-[13px] leading-snug">
               <span className="min-w-0 text-espresso">
-                {o?.eaten && <Check size={12} strokeWidth={3} className="mr-1 inline align-[-1px] text-forest" aria-label="eaten" />}
                 {item.name}
                 <span className="ml-1 text-[11px] whitespace-nowrap text-warm-grey tabular">
                   {fmtAmount(item.amount)} {item.unit}
                 </span>
-                {o?.eaten && o.amount !== undefined && o.amount !== item.amount && (
-                  <span className="ml-1 text-[11px] whitespace-nowrap text-forest tabular">· ate {fmtAmount(o.amount)}</span>
-                )}
                 {item.note && <span className="ml-1 text-[11px] text-olive italic">— {item.note}</span>}
               </span>
               <span className="shrink-0 text-right text-[10.5px] whitespace-nowrap text-warm-grey tabular">{macroText(item)}</span>
             </li>
-          );
-        })}
-        {/* LOG-4: today-only extras */}
-        {extras.map((item) => (
-          <li key={item.id} className="flex items-baseline justify-between gap-3 text-[13px] leading-snug">
-            <span className="min-w-0 text-olive">
-              + {item.name}
-              <span className="ml-1 text-[11px] whitespace-nowrap text-warm-grey tabular">
-                {fmtAmount(item.amount)} {item.unit} · today
-              </span>
-            </span>
-            <span className="shrink-0 text-right text-[10.5px] whitespace-nowrap text-warm-grey tabular">{macroText(item)}</span>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </ul>
+      )}
 
       <div className="mt-2.5 flex items-baseline justify-between gap-3 border-t border-forest/15 pt-2 text-[12.5px] font-bold text-espresso">
         <span>Subtotal</span>
         <span className="text-right whitespace-nowrap tabular">{macroText(subtotal)}</span>
       </div>
-
-      {/* History: just the status, no buttons. */}
-      {readOnly && (
-        <p className={`mt-2.5 text-right text-[12.5px] font-semibold ${status === 'eaten' ? 'text-forest' : status === 'partial' ? 'text-olive' : 'text-warm-grey'}`}>
-          {status === 'eaten' ? 'Eaten' : status === 'partial' ? 'Partly eaten' : 'Not eaten'}
-        </p>
-      )}
-
-      {/* LOG-2: Eaten button; tapping again offers "Mark as not eaten". */}
-      {!readOnly && <div className="mt-3 flex min-h-9 items-center justify-end gap-2">
-        <AnimatePresence mode="popLayout" initial={false}>
-          {confirmUndo ? (
-            <motion.div key="confirm" className="flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <button onClick={() => setConfirmUndo(false)} className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-warm-grey">
-                Keep
-              </button>
-              <button
-                onClick={() => {
-                  actions.markNotEaten(meal.id);
-                  setConfirmUndo(false);
-                }}
-                className="rounded-full border border-terracotta/50 bg-porcelain px-3 py-1.5 text-[12.5px] font-semibold text-terracotta"
-              >
-                Mark as not eaten
-              </button>
-            </motion.div>
-          ) : status === 'eaten' ? (
-            <motion.button
-              key="eaten"
-              onClick={() => setConfirmUndo(true)}
-              className="flex items-center gap-1.5 rounded-full bg-forest/10 px-3.5 py-1.5 text-[13px] font-semibold text-forest"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <DrawnCheck size={15} /> Eaten
-            </motion.button>
-          ) : (
-            <motion.div key="open" className="flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {status === 'partial' && <span className="text-[12px] font-medium text-olive">Partly eaten</span>}
-              <button
-                onClick={() => actions.markEaten(meal.id)}
-                className="rounded-full bg-forest px-4 py-1.5 text-[13px] font-semibold text-cream shadow-sm active:scale-[0.97]"
-              >
-                {status === 'partial' ? 'Finish meal' : 'Mark eaten'}
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>}
-    </CardShell>
+    </article>
   );
 }

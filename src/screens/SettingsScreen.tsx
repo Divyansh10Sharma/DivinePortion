@@ -1,16 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
-import { Download, FileUp, Loader2, Moon, RotateCcw, Share, Sun } from 'lucide-react';
+import { ChevronLeft, Download, FileUp, Loader2, Moon, Share, Sun } from 'lucide-react';
 import { getPersistenceStatus, type PersistenceStatus } from '../lib/storage';
 import { lastBackupLabel, parseBackup, type BackupFile, type BackupSummary } from '../lib/backup';
-import { localDateKey } from '../lib/dates';
-import type { FooterIcon, Settings, Targets } from '../lib/types';
+import type { FooterIcon, Settings } from '../lib/types';
 import { importAll } from '../db/backup';
-import { ensureDayLog } from '../db/dayLogs';
 import { SCHEMA_VERSION } from '../db/seed';
-import { resetToday, updateSettings, updateTargets } from '../db/settings';
+import { updateSettings } from '../db/settings';
 import { prepareExport, resetExport, saveExport, useExportState } from '../hooks/backupFlow';
-import { NumberInput } from '../components/inputs/NumberInput';
 import { TextInput } from '../components/inputs/TextInput';
 import { ConfirmDialog } from '../components/dialog/ConfirmDialog';
 import { FooterGlyph } from '../components/icons/icons';
@@ -22,13 +19,6 @@ const STATUS_LABEL: Record<PersistenceStatus, string> = {
   'may-be-evicted': 'may be evicted',
   unsupported: 'may be evicted (persistence not supported)',
 };
-
-const TARGET_FIELDS: { key: keyof Targets; label: string; unit: string }[] = [
-  { key: 'kcal', label: 'Calories', unit: 'kcal / day' },
-  { key: 'proteinMin', label: 'Protein', unit: 'g minimum' },
-  { key: 'fatMin', label: 'Fat', unit: 'g minimum' },
-  { key: 'fibreMin', label: 'Fibre', unit: 'g minimum' },
-];
 
 const FOOTER_ICON_CHOICES: FooterIcon[] = ['droplet', 'leaf', 'coffee', 'clock', 'sun', 'moon', 'apple', 'star', 'sparkle'];
 
@@ -53,11 +43,10 @@ function Row({ label, children, hint }: { label: string; children: ReactNode; hi
   );
 }
 
-/** Settings (SET-1 … SET-7, LOG-8). */
-export function SettingsScreen({ settings, today }: { settings: Settings; today: string }) {
+/** Settings (SET-2 … SET-7), opened from the gear on Today (v2 redesign). */
+export function SettingsScreen({ settings, onBack }: { settings: Settings; onBack: () => void }) {
   const [status, setStatus] = useState<PersistenceStatus | null>(null);
   const [pendingImport, setPendingImport] = useState<{ backup: BackupFile; summary: BackupSummary } | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
   const exportState = useExportState();
   const importInput = useRef<HTMLInputElement>(null);
 
@@ -98,8 +87,6 @@ export function SettingsScreen({ settings, today }: { settings: Settings; today:
     setPendingImport(null);
     try {
       await importAll(backup);
-      // The backup may not contain today: make sure today has a log again.
-      await ensureDayLog(localDateKey());
       showToast({ message: 'Backup restored' });
     } catch {
       showToast({ message: 'Import failed — nothing was changed.', durationMs: 7000 });
@@ -110,7 +97,10 @@ export function SettingsScreen({ settings, today }: { settings: Settings; today:
 
   return (
     <div className="mx-auto max-w-[480px] px-4 pt-6">
-      <h1 className="font-serif text-[28px] font-bold text-forest">Settings</h1>
+      <button onClick={onBack} className="-ml-1 flex items-center gap-0.5 text-[14px] font-semibold text-forest">
+        <ChevronLeft size={18} aria-hidden /> Today
+      </button>
+      <h1 className="mt-2 font-serif text-[28px] font-bold text-forest">Settings</h1>
 
       {/* Appearance (owner request after Phase 6) */}
       <Card title="Appearance">
@@ -145,24 +135,6 @@ export function SettingsScreen({ settings, today }: { settings: Settings; today:
             On the installed iPhone app, the status-bar colour follows after the next launch.
           </p>
         </div>
-      </Card>
-
-      {/* SET-1 */}
-      <Card title="Daily targets">
-        {TARGET_FIELDS.map(({ key, label, unit }) => (
-          <Row key={key} label={label}>
-            <span className="flex items-center justify-end gap-2">
-              <NumberInput
-                aria-label={label}
-                value={settings.targets[key]}
-                onCommit={(v) => v !== undefined && void updateTargets((t) => ({ ...t, [key]: v }))}
-                className="w-[84px] text-right"
-              />
-              <span className="w-[70px] text-left text-[12px] text-warm-grey">{unit}</span>
-            </span>
-          </Row>
-        ))}
-        <p className="pb-3 text-[12px] leading-snug text-warm-grey">Changes apply from today; past days keep the targets they had.</p>
       </Card>
 
       {/* SET-2 */}
@@ -247,23 +219,8 @@ export function SettingsScreen({ settings, today }: { settings: Settings; today:
             onChange={(e) => void onImportFile(e.target.files?.[0])}
           />
           <p className="text-[12px] leading-snug text-warm-grey">
-            The file holds everything: settings, plan, every day and all photos. On iPhone choose “Save to Files” and keep it in iCloud
+            The file holds everything: settings, your meals, Your items, saved plans and all photos. On iPhone choose “Save to Files” and keep it in iCloud
             Drive — iOS can clear app data that isn't used for a while.
-          </p>
-        </div>
-      </Card>
-
-      {/* SET-6 / LOG-8 */}
-      <Card title="Today">
-        <div className="py-3">
-          <button
-            onClick={() => setConfirmReset(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-terracotta/50 py-2.5 text-[14.5px] font-semibold text-terracotta"
-          >
-            <RotateCcw size={16} aria-hidden /> Reset today's log
-          </button>
-          <p className="mt-2 text-[12px] leading-snug text-warm-grey">
-            Starts today again from the current plan: clears what you marked eaten, extras and snack entries.
           </p>
         </div>
       </Card>
@@ -287,25 +244,13 @@ export function SettingsScreen({ settings, today }: { settings: Settings; today:
         onConfirm={() => void confirmImport()}
         onCancel={() => setPendingImport(null)}
       />
-      <ConfirmDialog
-        open={confirmReset}
-        title="Reset today's log?"
-        message={`Everything logged for ${format(new Date(`${today}T12:00:00`), 'EEEE d MMMM')} will be cleared and today restarts from the current plan.`}
-        confirmLabel="Reset"
-        cancelLabel="Cancel"
-        onConfirm={() => {
-          setConfirmReset(false);
-          void resetToday().then(() => showToast({ message: "Today's log was reset" }));
-        }}
-        onCancel={() => setConfirmReset(false)}
-      />
     </div>
   );
 }
 
 /** SET-4 summary: days, photos, date range. */
 function describeImport(s: BackupSummary): string {
-  const d = (key: string) => format(new Date(`${key}T12:00:00`), 'd MMM yyyy');
-  const range = s.from && s.to ? (s.from === s.to ? ` (${d(s.from)})` : ` (${d(s.from)} – ${d(s.to)})`) : '';
-  return `This backup from ${format(new Date(s.exportedAt), 'd MMM yyyy, HH:mm')} has ${s.days} day${s.days === 1 ? '' : 's'}${range} and ${s.photos} photo${s.photos === 1 ? '' : 's'}. Everything currently in the app will be replaced.`;
+  const n = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+  const parts = [n(s.meals, 'meal'), n(s.items, 'item'), n(s.savedPlans, 'saved plan'), n(s.photos, 'photo')];
+  return `This backup from ${format(new Date(s.exportedAt), 'd MMM yyyy, HH:mm')} has ${parts.join(', ')}. Everything currently in the app will be replaced.`;
 }

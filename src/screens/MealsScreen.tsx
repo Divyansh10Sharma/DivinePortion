@@ -1,26 +1,32 @@
 import { useCallback, useState } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
 import { fmt, mealPlanned, plannedMeals, plannedWithSnack } from '../lib/nutrition';
-import { byOrder, insertAt, makeItem, makeMeal, moveById, removeById, updateItem, updateMeal } from '../lib/planEdit';
+import { byOrder, insertAt, makeMeal, moveById, removeById, updateItem, updateMeal } from '../lib/planEdit';
+import { itemFromLibrary } from '../lib/library';
 import { newId } from '../lib/ids';
-import type { Plan } from '../lib/types';
+import type { LibraryItem, Plan } from '../lib/types';
 import { savePlan } from '../hooks/planSync';
-import { showUndo } from '../components/toast/toastStore';
+import { addLibraryItem } from '../db/library';
 import { scheduleOrphanCleanup } from '../db/photos';
-import { MealIconNode } from '../components/icons/icons';
+import { showToast, showUndo } from '../components/toast/toastStore';
+import { MealPhoto } from '../components/cards/MealPhoto';
 import { TextInput } from '../components/inputs/TextInput';
 import { DragHandle, SortableList, SortableRow } from '../components/dnd/Sortable';
 import { SwipeToDelete } from '../components/dnd/SwipeToDelete';
 import { MealEditorSheet } from '../components/plan/MealEditorSheet';
 import { ItemEditorSheet } from '../components/plan/ItemEditorSheet';
+import { ItemPickerSheet } from '../components/items/ItemPickerSheet';
+import { LibraryItemSheet } from '../components/items/LibraryItemSheet';
 
 /**
- * Plan editor (PLAN-1 … PLAN-10). Every edit is saved immediately; today's log follows the plan
- * per PLAN-9 (silently, or via the prompt shown when leaving this tab).
+ * Meals (PLAN-1 … PLAN-10, v2): the current meals. Items are picked from "Your items" by grams.
+ * Every edit is saved immediately.
  */
-export function PlanScreen({ plan }: { plan: Plan }) {
+export function MealsScreen({ plan, library }: { plan: Plan; library: LibraryItem[] }) {
   const [mealId, setMealId] = useState<string | null>(null);
   const [itemId, setItemId] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const meals = byOrder(plan.meals);
   const meal = meals.find((m) => m.id === mealId);
@@ -29,9 +35,12 @@ export function PlanScreen({ plan }: { plan: Plan }) {
 
   const closeMeal = useCallback(() => {
     setItemId(null);
+    setPicking(false);
     setMealId(null);
   }, []);
   const closeItem = useCallback(() => setItemId(null), []);
+  const closePicker = useCallback(() => setPicking(false), []);
+  const closeCreate = useCallback(() => setCreating(false), []);
 
   // --- meals ---------------------------------------------------------------
   function addMeal() {
@@ -52,10 +61,13 @@ export function PlanScreen({ plan }: { plan: Plan }) {
   }
 
   // --- items ---------------------------------------------------------------
-  function addItem(forMealId: string) {
-    const id = `${forMealId}-${newId()}`;
-    savePlan((p) => updateMeal(p, forMealId, (m) => ({ ...m, items: [...byOrder(m.items), makeItem(id, m.items.length)] })));
-    setItemId(id);
+  function pick(lib: LibraryItem, grams: number) {
+    if (!meal) return;
+    const forMealId = meal.id;
+    savePlan((p) =>
+      updateMeal(p, forMealId, (m) => ({ ...m, items: [...byOrder(m.items), itemFromLibrary(lib, `${forMealId}-${newId()}`, m.items.length, grams)] })),
+    );
+    showToast({ message: `Added ${lib.name} · ${grams} g` });
   }
 
   function deleteItem(forMealId: string, id: string) {
@@ -63,9 +75,8 @@ export function PlanScreen({ plan }: { plan: Plan }) {
     const { removed, index } = removeById(current?.items ?? [], id);
     if (!removed) return;
     savePlan((p) => updateMeal(p, forMealId, (m) => ({ ...m, items: removeById(m.items, id).list })));
-    scheduleOrphanCleanup();
     if (itemId === id) setItemId(null);
-    showUndo(`“${removed.name}” deleted`, () =>
+    showUndo(`“${removed.name}” removed`, () =>
       savePlan((p) => updateMeal(p, forMealId, (m) => ({ ...m, items: insertAt(m.items, removed, index) }))),
     );
   }
@@ -74,7 +85,7 @@ export function PlanScreen({ plan }: { plan: Plan }) {
     <div className="mx-auto max-w-[480px] px-4 pt-6">
       {/* PLAN-10: the title is editable; the Today header always shows the computed kcal before it. */}
       <label className="block">
-        <span className="text-[11px] font-semibold tracking-[0.14em] text-olive uppercase">Plan title</span>
+        <span className="text-[11px] font-semibold tracking-[0.14em] text-olive uppercase">Meals · plan title</span>
         <TextInput
           value={plan.title}
           onCommit={(title) => savePlan((p) => ({ ...p, title }))}
@@ -83,7 +94,8 @@ export function PlanScreen({ plan }: { plan: Plan }) {
         />
       </label>
       <p className="mt-1 text-[12.5px] text-warm-grey tabular">
-        Shows as “{fmt(totals.withSnack.kcal)} kcal {plan.title}” · meals {fmt(totals.meals.kcal)} kcal · {fmt(totals.meals.protein)}g protein
+        {fmt(totals.meals.kcal)} kcal · {fmt(totals.meals.protein)}g protein
+        {totals.withSnack.kcal !== totals.meals.kcal && ` · ${fmt(totals.withSnack.kcal)} kcal with snack`}
       </p>
 
       <SortableList ids={meals.map((m) => m.id)} onMove={(from, to) => savePlan((p) => ({ ...p, meals: moveById(p.meals, from, to) }))}>
@@ -101,7 +113,7 @@ export function PlanScreen({ plan }: { plan: Plan }) {
                     <div className={`flex items-center gap-2 py-2.5 pr-3 pl-2 ${m.isFreeSlot ? 'rounded-[20px] border-[1.5px] border-dashed border-olive/60' : ''}`}>
                       <DragHandle label={m.name} {...handle} />
                       <button onClick={() => setMealId(m.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                        <MealIconNode icon={m.icon} size={34} />
+                        <MealPhoto photoId={m.photoId} size={42} />
                         <span className="min-w-0 flex-1">
                           <span className="block text-[11px] font-semibold text-olive tabular">{m.time}</span>
                           <span className="block truncate font-serif text-[16px] font-semibold text-espresso">{m.name}</span>
@@ -128,20 +140,33 @@ export function PlanScreen({ plan }: { plan: Plan }) {
       >
         <Plus size={17} aria-hidden /> Add meal
       </button>
-      <p className="mt-3 text-center text-[11.5px] leading-relaxed text-warm-grey">
-        Drag ⋮⋮ to reorder · swipe left to delete · tap to edit.
-        <br />
-        Changes apply from today onward; past days never change.
-      </p>
+      <p className="mt-3 text-center text-[11.5px] leading-relaxed text-warm-grey">Drag ⋮⋮ to reorder · swipe left to delete · tap to edit.</p>
 
       <MealEditorSheet
         meal={meal}
         onClose={closeMeal}
         onChange={(update) => meal && savePlan((p) => updateMeal(p, meal.id, update))}
         onDeleteMeal={() => meal && deleteMeal(meal.id)}
-        onAddItem={() => meal && addItem(meal.id)}
+        onAddItem={() => setPicking(true)}
         onEditItem={setItemId}
         onDeleteItem={(id) => meal && deleteItem(meal.id, id)}
+      />
+      <ItemPickerSheet
+        open={picking && !!meal}
+        mealName={meal?.name ?? ''}
+        library={library}
+        onPick={pick}
+        onCreateNew={() => setCreating(true)}
+        onClose={closePicker}
+      />
+      <LibraryItemSheet
+        open={creating}
+        item={undefined}
+        onClose={closeCreate}
+        onSave={(fields) => {
+          closeCreate();
+          void addLibraryItem(fields).then((lib) => showToast({ message: `“${lib.name}” added to Your items — tap it to add grams` }));
+        }}
       />
       <ItemEditorSheet
         item={item}

@@ -9,13 +9,12 @@ import { TextInput } from '../inputs/TextInput';
 import { DragHandle, SortableList, SortableRow } from '../dnd/Sortable';
 import { SwipeToDelete } from '../dnd/SwipeToDelete';
 import { Field, SectionTitle, Toggle } from './Field';
-import { IconPicker } from './IconPicker';
 import { PhotoPicker } from '../photos/PhotoPicker';
-import { ItemThumb } from '../photos/ItemThumb';
 
 /**
  * Meal editor (PLAN-2, PLAN-4, PLAN-5). Changes save immediately through `onChange`.
- * Items: drag the grip to reorder, swipe left to delete (Undo toast), tap to edit.
+ * v2: no timeline icon and no item photos (owner request); "Add from Your items" opens the picker.
+ * Items: drag the grip to reorder, swipe left to delete (Undo toast), tap to edit grams.
  */
 export function MealEditorSheet({
   meal,
@@ -106,10 +105,6 @@ function MealForm({
         </Field>
       </div>
 
-      <Field label="Timeline icon">
-        <IconPicker value={meal.icon} onChange={(icon) => onChange((m) => ({ ...m, icon }))} />
-      </Field>
-
       <Field label="Badge (optional)" hint="Small terracotta badge on the card, e.g. LAST CAFFEINE OF THE DAY.">
         <TextInput
           value={meal.badge ?? ''}
@@ -166,12 +161,11 @@ function MealForm({
                         <div className="flex items-center gap-1 py-1.5 pr-2 pl-2">
                           <DragHandle label={item.name} {...handle} />
                           <button onClick={() => onEditItem(item.id)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
-                            <ItemThumb photoId={item.photoId} />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-[14px] text-espresso">{item.name}</span>
                               <span className="block text-[11px] text-warm-grey tabular">
                                 {fmtAmount(item.amount)} {item.unit} · {fmt(item.kcal)} kcal · {fmt(item.protein)}g P
-                                {item.base && (item.valuesSource === 'base' ? ' · auto' : ' · manual')}
+                                {!item.libraryId && ' · custom'}
                               </span>
                             </span>
                             <ChevronRight size={16} className="shrink-0 text-warm-grey" aria-hidden />
@@ -188,7 +182,7 @@ function MealForm({
             onClick={onAddItem}
             className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-forest/40 py-2.5 text-[14px] font-semibold text-forest"
           >
-            <Plus size={16} aria-hidden /> Add item
+            <Plus size={16} aria-hidden /> Add from Your items
           </button>
           {items.length > 1 && <p className="text-center text-[11.5px] text-warm-grey">Drag ⋮⋮ to reorder · swipe left to delete</p>}
         </>

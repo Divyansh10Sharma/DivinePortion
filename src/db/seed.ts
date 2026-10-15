@@ -4,7 +4,8 @@
 
 import type { BasePer, Item, Meal, MealIcon, Plan, Settings } from '../lib/types';
 
-export const SCHEMA_VERSION = 1;
+/** 1 = original; 2 = v2 redesign (Your items library + saved plans). */
+export const SCHEMA_VERSION = 2;
 
 type N5 = readonly [kcal: number, protein: number, carbs: number, fat: number, fibre: number];
 

@@ -1,4 +1,4 @@
-// Domain types — SPEC.md §4.1.
+// Domain types — SPEC.md §4.1, plus the v2 redesign (owner request): an item library and saved plans.
 
 /** Known units plus free text (e.g. "each", "cup", "serving"). */
 export type KnownUnit = 'g' | 'ml' | 'piece' | 'sachet' | 'scoop' | 'pinch';
@@ -24,10 +24,35 @@ export interface Item extends Nutrition {
   base?: { per: BasePer } & Nutrition;
   /** PLAN-7: whether the five values were computed from `base` or typed by hand. */
   valuesSource: 'base' | 'manual';
+  /** Legacy (v1): item photos are no longer shown or editable. */
   photoId?: string;
   note?: string;
+  /**
+   * v2: set when the item was picked from "Your items" (the library). Its `base` is the library
+   * item's per-100 values and `amount` is in grams.
+   */
+  libraryId?: string;
 }
 
+/** v2 "Your items": a food with its macros per 100 g. */
+export interface LibraryItem {
+  id: string;
+  name: string;
+  /** kcal / protein / carbs / fat / fibre per 100 g */
+  per100: Nutrition;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** v2 "Saved plans": a named, read-only copy of the meals. */
+export interface SavedPlan {
+  id: string;
+  name: string;
+  meals: Meal[];
+  createdAt: number;
+}
+
+/** Legacy (v1): meal timeline icons are no longer shown or editable. */
 export type KnownMealIcon =
   | 'sunrise'
   | 'sun'

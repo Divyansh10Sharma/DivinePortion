@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
-// NAV-2: state-based navigation with an optional hash (#today, #history, …).
+// NAV-2: state-based navigation with an optional hash (#plans, #meals, …).
+// v2 redesign: four tabs in the bar (today, plans, meals, items); 'settings' is opened from Today's gear.
 // No router → no server routes → nothing to break offline.
 
-export const TABS = ['today', 'history', 'plan', 'settings'] as const;
+export const TABS = ['today', 'plans', 'meals', 'items', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
 
 function tabFromHash(): Tab {

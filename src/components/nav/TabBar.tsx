@@ -1,12 +1,12 @@
 import { motion } from 'motion/react';
-import { CalendarDays, NotebookPen, Settings, Sun, type LucideIcon } from 'lucide-react';
+import { Apple, BookMarked, NotebookPen, Sun, type LucideIcon } from 'lucide-react';
 import type { Tab } from '../../hooks/useActiveTab';
 
 const ITEMS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'today', label: 'Today', icon: Sun },
-  { id: 'history', label: 'History', icon: CalendarDays },
-  { id: 'plan', label: 'Plan', icon: NotebookPen },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'plans', label: 'Plans', icon: BookMarked },
+  { id: 'meals', label: 'Meals', icon: NotebookPen },
+  { id: 'items', label: 'Items', icon: Apple },
 ];
 
 /**

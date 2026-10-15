@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-**Current phase:** Phase 6 complete — all six phases done. Remaining: the owner's on-device run of the iPhone QA checklist in README.md.
+**Current state:** v2.0.0 — owner redesign after using the app (see “v2 redesign” below). SPEC.md phases 1–6 were completed first; v2 replaces parts of them at the owner's request.
 
 Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs to a later phase
 
@@ -55,7 +55,28 @@ Legend: ✅ done · ⚠️ partial (reason given) · ❌ missing · ⏳ belongs 
 
 ---
 
-## Requirement status
+## v2 redesign (owner request, 2026-10-15)
+
+After using the app the owner asked for a simpler app with four sections. Owner answers to the open questions: saved plans are **view + use** (no rename / delete); meal quantities are **grams only**; existing meals: **convert what can be converted**; Settings behind a **gear on Today** (History removed).
+
+**New**
+- **Your items** (Items tab): foods with kcal / protein / carbs / fats / fiber **per 100 g**, shown as a table (Name · Kcal · Protein · Carbs · Fats · Fiber), add / edit (explicit Save) / delete (Undo). Editing an item updates the current meals that use it; saved plans stay as saved.
+- **Meals** (the old Plan tab): items are picked from Your items by **grams** (searchable picker, several in a row, "New item" shortcut). Meal items store `libraryId` + a copy of the per-100 g values as `base`, so all nutrition maths is unchanged.
+- **Saved plans** (Plans tab): "Save current meals as a plan" with a name → cards; tap → read-only sheet (totals + meals) → **Use this plan** (confirm) replaces the current meals.
+- **Today**: current meals as the poster with the **total macros on top**; gear → Settings.
+- **Data**: Dexie **v2** adds `library` and `savedPlans`. The v1 → v2 upgrade (and a fresh install, and importing a v1 backup) converts every item with a per-100 g / per-100 ml base into a library item (deduplicated by name + values; ml treated as g), linked by `libraryId`, **keeping the stored values** so totals don't change until grams are edited (seed still 2233 / 2363). Items per piece / sachet / serving stay as "custom" items in their meals. Backup **schemaVersion 2** includes Your items and saved plans; v1 backups still import (and get converted).
+
+**Removed (owner request)** — code deleted, not just hidden:
+- Daily logging: Mark eaten, partial amounts, extras, free-slot logging, eaten rings / targets panel, next-meal highlight → LOG-1…LOG-8, HOME-9, §4.4, ANIM-3, ANIM-4 no longer apply.
+- History tab (HIST-1…HIST-3) and the PLAN-9 "apply to today" prompt (no day logs any more). Old day logs stay in the database and in backups so nothing is lost, but nothing reads or writes them.
+- Item photos (PHOTO-1/PLAN-6 now: **meal** photos only) and meal timeline icons (PLAN-3) — the timeline shows a small dot + time.
+- Targets editing and "Reset today" in Settings (SET-1, SET-6).
+- Item base editing (PLAN-7) is replaced by Your items (per 100 g) + grams.
+
+Verified: typecheck, lint, 64 unit tests (incl. v1 → v2 upgrade, migration keeps totals, library edits / deletes, saved plans, backup round-trip incl. Your items + saved plans, v1 backup import), production build; in Chrome at iPhone size: all four tabs, add item → pick 150 g into a meal (145.5 kcal), save plan → change meals → use plan, Settings via gear; 360 / 390 / 430 px audit (inputs ≥ 16 px, no horizontal overflow, no errors); offline reload.
+
+## Requirement status (SPEC phases 1–6; see v2 above for what changed)
+
 
 | ID | Status | Notes |
 |---|---|---|
@@ -204,3 +225,4 @@ Phase 6 re-audit (all requirement IDs above re-checked; SPEC.md unchanged). Unit
 49. **App icon = the owner's `assets/Cake.png`** (owner request; replaces SPEC IOS-3's plate-and-leaf SVG motif). The 1254×1254 photo is centre-cropped and flattened (no transparency, as iOS needs) into the 180 px apple-touch-icon, the 192 / 512 manifest icons and the maskable 512 (full-bleed; the cake sits in the safe zone), plus a 64 px PNG favicon. The old `icon-source.svg` and `favicon.svg` were removed (still in git history). Version 1.1.2.
 50. **App icon changed to the owner's `assets/Treats.png`, used exactly as provided** (no trimming of its edges), resized to every icon size by `npm run icons`. `Cake.png` stays in `assets/` but is no longer used. Version 1.1.3.
 51. **App icon is chosen in one place (owner request):** `assets/index.js` exports `AppIcon` (a path relative to `assets/`, currently `./Treats.png`). `scripts/generate-icons.mjs` reads it and generates every icon; it runs automatically as npm `predev` / `prebuild`, so Vercel's `npm run build` regenerates icons on every deploy. The generated PNGs in `public/` are git-ignored, so a stale committed icon can never win. A missing or empty `AppIcon` fails the build with a clear message; non-square images are centre-cropped (with a warning). Version 1.1.4.
+52. **v2 redesign** — see the section above. Decisions inside it: library values are per 100 g only and meal quantities are grams; per-100 ml items (milk) became per-100 g library items (ml ≈ g); converted items keep their original values (`valuesSource: 'manual'`) until their grams are edited; library edits flow into the current meals but not into saved plans; deleting a library item keeps the meal items' values (they become custom); "Use this plan" replaces the current meals after a confirmation; saved plans have no rename / delete (owner choice); old day logs are kept in the DB and backups but unused. Version 2.0.0.

@@ -1,63 +1,60 @@
-import { useCallback, useMemo, useState } from 'react';
-import { dayTotals, findMeal, nextMealId, targetStatus } from '../lib/dayLog';
-import type { DayLog, Plan, Settings } from '../lib/types';
-import { useLogActions } from '../hooks/useLogActions';
+import { useMemo } from 'react';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { plannedMeals, plannedWithSnack } from '../lib/nutrition';
+import { shouldShowBackupBanner } from '../lib/backup';
+import type { Plan, Settings } from '../lib/types';
+import { dismissBackupBanner } from '../db/settings';
 import { PosterHeader } from '../components/poster/PosterHeader';
 import { DayTotalsBar } from '../components/poster/DayTotalsBar';
 import { PosterFooter } from '../components/poster/PosterFooter';
-import { Timeline } from '../components/timeline/Timeline';
-import { TargetsPanel } from '../components/rings/TargetsPanel';
-import { MealSheet } from '../components/sheets/MealSheet';
 import { BackupBanner } from '../components/poster/BackupBanner';
-import { shouldShowBackupBanner } from '../lib/backup';
-import { dismissBackupBanner } from '../db/settings';
+import { Timeline } from '../components/timeline/Timeline';
 
 /**
- * HOME-1: today's poster, rendered from today's DayLog snapshot (LOG-1) with logging (LOG-2…7, HOME-9).
+ * Today (v2 redesign, owner request): the current meals as a poster with the total macros on top.
+ * No eaten tracking. The gear opens Settings (backup, theme, footer).
  */
 export function TodayScreen({
   plan,
   settings,
-  log,
-  date,
-  now,
+  onOpenSettings,
   onBackupNow,
 }: {
-  /** SET-5 banner action: go to Settings and start preparing the export. */
-  onBackupNow: () => void;
   plan: Plan;
   settings: Settings;
-  log: DayLog;
-  date: string;
-  now: Date;
+  onOpenSettings: () => void;
+  /** SET-5 banner action: go to Settings and start preparing the export. */
+  onBackupNow: () => void;
 }) {
-  const actions = useLogActions(date);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const closeSheet = useCallback(() => setSelectedId(null), []);
-
-  const totals = useMemo(() => dayTotals(log), [log]);
-  const status = useMemo(() => targetStatus(log), [log]);
-  const nextId = nextMealId(log, now);
-  const selectedMeal = selectedId ? findMeal(log, selectedId) : undefined;
+  const totals = useMemo(() => ({ meals: plannedMeals(plan.meals), withSnack: plannedWithSnack(plan.meals) }), [plan.meals]);
 
   return (
-    <div className="mx-auto max-w-[480px]">
-      <PosterHeader kcal={totals.plannedWithSnack.kcal} protein={totals.plannedMeals.protein} title={plan.title} />
-      {shouldShowBackupBanner(settings, now.getTime()) && (
+    <div className="relative mx-auto max-w-[480px]">
+      <button
+        onClick={onOpenSettings}
+        aria-label="Settings"
+        className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full text-forest active:bg-forest/10"
+      >
+        <SettingsIcon size={21} strokeWidth={1.8} aria-hidden />
+      </button>
+      <PosterHeader kcal={totals.withSnack.kcal} protein={totals.meals.protein} title={plan.title} />
+      {shouldShowBackupBanner(settings) && (
         <BackupBanner lastBackupAt={settings.lastBackupAt} onBackup={onBackupNow} onDismiss={() => void dismissBackupBanner()} />
       )}
       <div className="px-4">
+        {/* Total macros on top (owner request). */}
         <div className="mb-6">
-          <TargetsPanel totals={totals} status={status} />
+          <DayTotalsBar meals={totals.meals} withSnackKcal={totals.withSnack.kcal} />
         </div>
-        <Timeline log={log} nextId={nextId} selectedId={selectedId} onOpen={setSelectedId} actions={actions} />
-        <div className="mt-6">
-          <DayTotalsBar meals={totals.plannedMeals} withSnackKcal={totals.plannedWithSnack.kcal} />
-        </div>
+        {plan.meals.length === 0 ? (
+          <p className="rounded-[22px] bg-porcelain p-5 text-center text-[14px] text-warm-grey shadow-card">
+            No meals yet — add them in the Meals tab.
+          </p>
+        ) : (
+          <Timeline meals={plan.meals} />
+        )}
         <PosterFooter items={settings.footerItems} />
       </div>
-
-      <MealSheet meal={selectedMeal} log={log} actions={actions} onClose={closeSheet} />
     </div>
   );
 }

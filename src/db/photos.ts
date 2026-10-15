@@ -3,7 +3,7 @@
 // They are referenced by id from the plan, plan snapshots in DayLogs, extras and free-slot entries.
 
 import { newId } from '../lib/ids';
-import type { DayLog, Item, Meal, Photo, Plan } from '../lib/types';
+import type { DayLog, Item, Meal, Photo, Plan, SavedPlan } from '../lib/types';
 import type { ProcessedImage } from '../lib/images';
 import { db, type PlateDB } from './db';
 
@@ -24,10 +24,11 @@ function addFromItems(ids: Set<string>, lists: Record<string, Item[]>): void {
   for (const list of Object.values(lists)) for (const i of list) if (i.photoId) ids.add(i.photoId);
 }
 
-/** Every photo id still in use: the plan, and every DayLog (past snapshots included). */
-export function referencedPhotoIds(plan: Plan | undefined, logs: readonly DayLog[]): Set<string> {
+/** Every photo id still in use: the plan, saved plans, and every (legacy) DayLog. */
+export function referencedPhotoIds(plan: Plan | undefined, logs: readonly DayLog[], saved: readonly SavedPlan[] = []): Set<string> {
   const ids = new Set<string>();
   if (plan) addFromMeals(ids, plan.meals);
+  for (const sp of saved) addFromMeals(ids, sp.meals);
   for (const log of logs) {
     addFromMeals(ids, log.mealsSnapshot);
     addFromItems(ids, log.extraItems);
@@ -42,13 +43,14 @@ export function referencedPhotoIds(plan: Plan | undefined, logs: readonly DayLog
  * or to a delete that can still be undone.
  */
 export async function deleteOrphanPhotos(database: PlateDB = db, now = Date.now(), graceMs = 10 * 60_000): Promise<number> {
-  return database.transaction('rw', [database.plan, database.dayLogs, database.photos], async () => {
-    const [plan, logs, photos] = await Promise.all([
+  return database.transaction('rw', [database.plan, database.dayLogs, database.photos, database.savedPlans], async () => {
+    const [plan, logs, photos, saved] = await Promise.all([
       database.plan.get('active'),
       database.dayLogs.toArray(),
       database.photos.toCollection().primaryKeys(),
+      database.savedPlans.toArray(),
     ]);
-    const used = referencedPhotoIds(plan, logs);
+    const used = referencedPhotoIds(plan, logs, saved);
     const candidates = (photos as string[]).filter((id) => !used.has(id));
     if (candidates.length === 0) return 0;
     const meta = await database.photos.bulkGet(candidates);
